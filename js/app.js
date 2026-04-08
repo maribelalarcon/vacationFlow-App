@@ -59,7 +59,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          usuario_id: 1,
+          usuario_id: localStorage.getItem('usuario_id'),
           tipo: tipoSel.dataset.tipo,
           fecha_inicio: inicio,
           fecha_fin: fin,
