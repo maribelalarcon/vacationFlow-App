@@ -1,0 +1,148 @@
+/* Estilos generales */
+body {
+    background-color: #e8f7f5;
+    margin: 0;
+    font-family: sans-serif;
+    color: #333;
+}
+
+/* Menu */
+.menu-arriba {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px 40px;
+}
+
+.logo-texto {
+    color: #1b7a6f;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.link-login {
+    color: #1b7a6f;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+/* Contenedor principal */
+.contenido {
+    display: flex;
+    justify-content: center;
+    padding-top: 50px;
+}
+
+.caja-blanca {
+    background: white;
+    display: flex;
+    width: 900px;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0px 10px 20px rgba(0,0,0,0.1);
+}
+
+/* Izquierda */
+.lado-izquierdo {
+    padding: 40px;
+    width: 50%;
+}
+
+.texto-gris {
+    color: gray;
+    font-size: 14px;
+}
+
+.campo {
+    margin-bottom: 15px;
+}
+
+.campo label {
+    display: block;
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+.campo input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #f9f9f9;
+}
+
+.fila-doble {
+    display: flex;
+    gap: 15px;
+}
+
+.boton-verde {
+    width: 100%;
+    background: #1b7a6f;
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.pie-form {
+    text-align: center;
+    font-size: 13px;
+}
+
+/* Derecha */
+.lado-derecho {
+    width: 50%;
+    background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500');
+    background-size: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.cuadro-info {
+    background: rgba(255, 255, 255, 0.8);
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.circulo-icono {
+    background: #1b7a6f;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin: 0 auto 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lista {
+    text-align: left;
+    font-size: 13px;
+    list-style: none;
+    padding: 0;
+}
+
+.lista li::before {
+    content: "• ";
+    color: #1b7a6f;
+}
+
+/* Footer */
+.footer-final {
+    display: flex;
+    justify-content: space-between;
+    padding: 40px;
+    font-size: 11px;
+    color: gray;
+}
+
+.links-abajo span {
+    margin-right: 15px;
+}
