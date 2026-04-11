@@ -43,44 +43,67 @@
   }
  
   // Validación y envío
-  async function handleSubmit() {
-    const inicio = document.getElementById('fecha-inicio').value;
-    const fin = document.getElementById('fecha-fin').value;
-    const tipoSel = document.querySelector('.tipo-card.selected');
-    const comentario = document.getElementById('motivo').value;
+async function handleSubmit() {
+  const inicio = document.getElementById('fecha-inicio').value;
+  const fin = document.getElementById('fecha-fin').value;
+  const tipoSel = document.querySelector('.tipo-card.selected');
+  const comentario = document.getElementById('motivo').value;
 
-    if (!tipoSel) { showToast('⚠️ Selecciona un tipo de solicitud.', false); return; }
-    if (!inicio) { showToast('⚠️ Indica la fecha de inicio.', false); return; }
-    if (!fin) { showToast('⚠️ Indica la fecha de finalización.', false); return; }
-    if (new Date(fin) < new Date(inicio)) { showToast('⚠️ La fecha de fin no puede ser anterior al inicio.', false); return; }
+  if (!tipoSel) { showToast('⚠️ Selecciona un tipo de solicitud.', false); return; }
+  if (!inicio) { showToast('⚠️ Indica la fecha de inicio.', false); return; }
+  if (!fin) { showToast('⚠️ Indica la fecha de finalización.', false); return; }
+  if (new Date(fin) < new Date(inicio)) { showToast('⚠️ La fecha de fin no puede ser anterior al inicio.', false); return; }
 
-    try {
-      const response = await fetch('http://localhost:3000/solicitudes', {
+  try {
+   
+    let justificante_ref = null;
+    if (uploadedFiles.length > 0) {
+      const formData = new FormData();
+      formData.append('justificante', uploadedFiles[0]);
+
+      const uploadRes = await fetch('http://localhost:3000/solicitudes/subir-justificante', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          usuario_id: localStorage.getItem('usuario_id'),
-          tipo: tipoSel.dataset.tipo,
-          fecha_inicio: inicio,
-          fecha_fin: fin,
-          comentario: comentario || null
-        })
+        body: formData
       });
 
-      const data = await response.json();
+      const uploadData = await uploadRes.json();
 
-      if (response.ok) {
-        showToast('✅ Solicitud enviada correctamente.');
-        setTimeout(resetForm, 2000);
-      } else {
-        showToast('⚠️ ' + data.message, false);
+      if (!uploadRes.ok) {
+        showToast('⚠️ ' + uploadData.message, false);
+        return;
       }
 
-    } catch (error) {
-      showToast('❌ No se pudo conectar con el servidor.', false);
-      console.error(error);
+      justificante_ref = uploadData.justificante_ref;
     }
+
+    
+    const response = await fetch('http://localhost:3000/solicitudes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        usuario_id: localStorage.getItem('usuario_id'),
+        tipo: tipoSel.dataset.tipo,
+        fecha_inicio: inicio,
+        fecha_fin: fin,
+        comentario: comentario || null,
+        justificante_ref: justificante_ref
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      showToast('✅ Solicitud enviada correctamente.');
+      setTimeout(resetForm, 2000);
+    } else {
+      showToast('⚠️ ' + data.message, false);
+    }
+
+  } catch (error) {
+    showToast('❌ No se pudo conectar con el servidor.', false);
+    console.error(error);
   }
+}
  
   function handleCancel() {
     if (confirm('¿Seguro que quieres cancelar? Se perderán los datos.')) resetForm();
