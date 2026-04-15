@@ -129,10 +129,11 @@ document.getElementById('next-btn').addEventListener('click', () => {
 // ─── INIT ────
 renderCalendar();
 
-// ─── TODO: conectar con API cuando el back esté listo ────
-// async function cargarEventos() {
-//   const usuarioId = localStorage.getItem('usuario_id');
-//   const res = await fetch(`http://localhost:3000/solicitudes?usuario_id=${usuarioId}`);
-//   const data = await res.json();
-//   // mapear data a formato eventos[] y llamar renderCalendar()
-// }
+async function cargarEventos() {
+  const token = localStorage.getItem('token');
+  const res = await fetch('http://localhost:3000/solicitudes', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await res.json();
+  // mapear data a formato eventos[] y llamar renderCalendar()
+}

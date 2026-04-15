@@ -17,8 +17,8 @@
  
   function handleFiles(files) {
     Array.from(files).forEach(file => {
-      if (file.size > 10 * 1024 * 1024) {
-        showToast('⚠️ El archivo "' + file.name + '" supera los 10MB.', false);
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('⚠️ El archivo "' + file.name + '" supera los 5MB.', false);
         return;
       }
       uploadedFiles.push(file);
@@ -48,11 +48,14 @@ async function handleSubmit() {
   const fin = document.getElementById('fecha-fin').value;
   const tipoSel = document.querySelector('.tipo-card.selected');
   const comentario = document.getElementById('motivo').value;
+  const token = localStorage.getItem('token');
+
 
   if (!tipoSel) { showToast('⚠️ Selecciona un tipo de solicitud.', false); return; }
   if (!inicio) { showToast('⚠️ Indica la fecha de inicio.', false); return; }
   if (!fin) { showToast('⚠️ Indica la fecha de finalización.', false); return; }
   if (new Date(fin) < new Date(inicio)) { showToast('⚠️ La fecha de fin no puede ser anterior al inicio.', false); return; }
+  if (!token) { showToast('⚠️ No se ha encontrado la sesión del usuario.', false); return; }
 
   try {
    
@@ -62,9 +65,10 @@ async function handleSubmit() {
       formData.append('justificante', uploadedFiles[0]);
 
       const uploadRes = await fetch('http://localhost:3000/solicitudes/subir-justificante', {
-        method: 'POST',
-        body: formData
-      });
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData
+    });
 
       const uploadData = await uploadRes.json();
 
@@ -79,9 +83,11 @@ async function handleSubmit() {
     
     const response = await fetch('http://localhost:3000/solicitudes', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({
-        usuario_id: localStorage.getItem('usuario_id'),
         tipo: tipoSel.dataset.tipo,
         fecha_inicio: inicio,
         fecha_fin: fin,
