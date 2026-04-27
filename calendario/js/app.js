@@ -1,23 +1,17 @@
-// ─── DATOS DE EJEMPLO (ficticios) ───
-const eventos = [
-  { nombre: 'Maria',  tipo: 'annual',  inicio: '2024-03-12', fin: '2024-03-18' },
-  { nombre: 'Carlos', tipo: 'sick',    inicio: '2024-03-15', fin: '2024-03-20' },
-  { nombre: 'Elena',  tipo: 'annual',  inicio: '2024-03-25', fin: '2024-03-29' },
-  { nombre: 'Jordi',  tipo: 'annual',  inicio: '2024-04-01', fin: '2024-04-05' },
-  { nombre: 'Sofía',  tipo: 'sick',    inicio: '2024-04-08', fin: '2024-04-10' },
-];
+// ─── EVENTOS (se cargan del back) ────────────────────────
+const eventos = [];
 
-// Meses en inglés para mostrar en el header
 const MESES = [
   'January','February','March','April','May','June',
   'July','August','September','October','November','December'
 ];
 
-// Estado del calendario
-let currentYear  = 2024;
-let currentMonth = 2; // 0-based, 2 = March
+// Estado del calendario - mes actual
+const hoyInicio = new Date();
+let currentYear  = hoyInicio.getFullYear();
+let currentMonth = hoyInicio.getMonth();
 
-// ─── RENDERIZAR CALENDARIO ───
+// ─── RENDERIZAR CALENDARIO ───────────────────────────────
 function renderCalendar() {
   const grid = document.getElementById('cal-grid');
   const label = document.getElementById('month-label');
@@ -29,14 +23,10 @@ function renderCalendar() {
   const lastDay  = new Date(currentYear, currentMonth + 1, 0);
   const today    = new Date();
 
-  // Día de la semana del primer día (0=Dom, ajustamos a Lun=0)
-  let startDow = firstDay.getDay(); // 0=Dom
-  startDow = (startDow === 0) ? 6 : startDow - 1; // Lun=0 ... Dom=6
+  let startDow = firstDay.getDay();
+  startDow = (startDow === 0) ? 6 : startDow - 1;
 
-  // Días del mes anterior para rellenar
   const prevMonthLast = new Date(currentYear, currentMonth, 0).getDate();
-
-  // Total celdas: suficientes para completar semanas
   const totalCells = Math.ceil((startDow + lastDay.getDate()) / 7) * 7;
 
   for (let i = 0; i < totalCells; i++) {
@@ -46,12 +36,10 @@ function renderCalendar() {
     let dayNum, cellDate;
 
     if (i < startDow) {
-      // Días mes anterior
       dayNum = prevMonthLast - startDow + i + 1;
       cellDate = new Date(currentYear, currentMonth - 1, dayNum);
       cell.classList.add('other-month');
     } else if (i >= startDow + lastDay.getDate()) {
-      // Días mes siguiente
       dayNum = i - startDow - lastDay.getDate() + 1;
       cellDate = new Date(currentYear, currentMonth + 1, dayNum);
       cell.classList.add('other-month');
@@ -60,7 +48,6 @@ function renderCalendar() {
       cellDate = new Date(currentYear, currentMonth, dayNum);
     }
 
-    // ¿Es hoy?
     if (
       cellDate.getDate() === today.getDate() &&
       cellDate.getMonth() === today.getMonth() &&
@@ -69,17 +56,14 @@ function renderCalendar() {
       cell.classList.add('today');
     }
 
-    // Número del día
     const numEl = document.createElement('div');
     numEl.className = 'day-num';
     numEl.textContent = cellDate.getDate();
     cell.appendChild(numEl);
 
-    // Eventos que caen en esta celda
     eventos.forEach(ev => {
       const inicio = new Date(ev.inicio);
       const fin    = new Date(ev.fin);
-      // Normalizamos horas
       inicio.setHours(0,0,0,0);
       fin.setHours(0,0,0,0);
       cellDate.setHours(0,0,0,0);
@@ -88,7 +72,6 @@ function renderCalendar() {
         const bar = document.createElement('div');
         bar.className = `event-bar ${ev.tipo}`;
 
-        // Solo mostramos el nombre en el día de inicio
         if (cellDate.getTime() === inicio.getTime()) {
           const inicioStr = formatFecha(inicio);
           const finStr    = formatFecha(fin);
@@ -107,33 +90,67 @@ function renderCalendar() {
   }
 }
 
-// ─── HELPER: formatear fecha corta "12 Mar" ───
+// ─── HELPER: formatear fecha corta "12 Mar" ──────────────
 function formatFecha(date) {
   const meses = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${date.getDate()} ${meses[date.getMonth()]}`;
 }
 
-// ─── NAVEGACIÓN ENTRE MESES ────
+// ─── NAVEGACIÓN ENTRE MESES ──────────────────────────────
 document.getElementById('prev-btn').addEventListener('click', () => {
   currentMonth--;
   if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-  renderCalendar();
+  cargarEventos();
 });
 
 document.getElementById('next-btn').addEventListener('click', () => {
   currentMonth++;
   if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-  renderCalendar();
+  cargarEventos();
 });
 
-// ─── INIT ────
-renderCalendar();
-
+// ─── CARGAR EVENTOS DEL BACK ─────────────────────────────
 async function cargarEventos() {
   const token = localStorage.getItem('token');
-  const res = await fetch('http://localhost:3000/solicitudes', {
-    headers: { 'Authorization': `Bearer ${token}` }
-  });
-  const data = await res.json();
-  // mapear data a formato eventos[] y llamar renderCalendar()
+  try {
+    const res = await fetch(
+      `http://localhost:3000/calendario?anio=${currentYear}&mes=${currentMonth + 1}`,
+      { headers: { 'Authorization': `Bearer ${token}` } }
+    );
+    const data = await res.json();
+
+    eventos.length = 0;
+    data.eventos.forEach(e => {
+      eventos.push({
+        nombre: e.empleado.nombre,
+        tipo: e.tipo === 'vacaciones' ? 'annual' : 'sick',
+        inicio: e.fecha_inicio.slice(0, 10),
+        fin: e.fecha_fin.slice(0, 10)
+      });
+    });
+
+    renderCalendar();
+  } catch (err) {
+    console.error('Error cargando eventos:', err);
+    renderCalendar();
+  }
 }
+
+// ─── OCULTAR MANAGER DASHBOARD SI NO ES MANAGER ──────────
+function getRolFromToken() {
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.rol;
+  } catch { return null; }
+}
+/*
+if (getRolFromToken() !== 'manager') {
+  const managerLink = document.querySelector('.nav-item-manager');
+  if (managerLink) managerLink.style.display = 'none';
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+cargarEventos();
+*/
