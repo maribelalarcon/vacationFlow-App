@@ -2,7 +2,7 @@
 //   VacationFlow — Calendario
 //   · Protección de ruta con token
 //   · Arranca en el mes actual
-//   · Intenta cargar eventos del back (GET /api/admin/calendar)
+//   · Carga eventos del back (GET /api/admin/calendar?anio=YYYY&mes=MM)
 //   · Si no hay eventos del back → calendario vacío (sin datos fake)
 //   · Logout funcional
 // ═══════════════════════════════════════════════════════
@@ -32,27 +32,29 @@ let eventos        = [];                  // eventos cargados del back
 // ═══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
 
-  // 1) Cargar eventos del back
+  // 1) Cargar eventos del back para el mes actual
   await cargarEventos();
 
   // 2) Renderizar el calendario
   renderCalendar();
 
-  // 3) Navegación entre meses
-  document.getElementById('prev-btn').addEventListener('click', () => {
+  // 3) Navegación entre meses (ahora también recarga eventos del nuevo mes)
+  document.getElementById('prev-btn').addEventListener('click', async () => {
     currentMonth--;
     if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    await cargarEventos();
     renderCalendar();
   });
 
-  document.getElementById('next-btn').addEventListener('click', () => {
+  document.getElementById('next-btn').addEventListener('click', async () => {
     currentMonth++;
     if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    await cargarEventos();
     renderCalendar();
   });
 
   // 4) Logout
-  const logoutBtn = document.querySelector('a[href="index.html"]');
+  const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -70,27 +72,40 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ═══════════════════════════════════════════════════════
 async function cargarEventos() {
   try {
-    const res = await fetch(`${API_URL}/api/admin/calendar`, {
+    // El endpoint exige ?anio= y ?mes= (mes 1-12)
+    const url = `${API_URL}/api/admin/calendar?anio=${currentYear}&mes=${currentMonth + 1}`;
+
+    const res = await fetch(url, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
     if (res.ok) {
       const data = await res.json();
-      // Mapear los datos del back al formato que usa el calendario
-      // El back devuelve: { nombre, apellidos, start_date, end_date, type, status }
-      eventos = data.map(ev => ({
-        nombre: `${ev.nombre} ${ev.apellidos || ''}`.trim(),
-        tipo:   mapearTipo(ev.type || ev.tipo),
-        inicio: ev.start_date || ev.fecha_inicio,
-        fin:    ev.end_date   || ev.fecha_fin
-      }));
-      console.log(`✅ Calendario: ${eventos.length} eventos cargados`);
+
+      // El back devuelve: { periodo, eventos: [...] }
+      // Cada evento: { id, referencia, empleado:{nombre,apellidos,...}, tipo, estado, fecha_inicio, fecha_fin, ... }
+      const lista = Array.isArray(data) ? data : (data.eventos || []);
+
+      eventos = lista.map(ev => {
+        const nombre    = ev.empleado?.nombre    || ev.nombre    || '';
+        const apellidos = ev.empleado?.apellidos || ev.apellidos || '';
+        return {
+          nombre: `${nombre} ${apellidos}`.trim() || 'Sin nombre',
+          tipo:   mapearTipo(ev.tipo || ev.type),
+          inicio: ev.fecha_inicio || ev.start_date,
+          fin:    ev.fecha_fin    || ev.end_date
+        };
+      });
+
+      console.log(`✅ Calendario: ${eventos.length} eventos cargados para ${MESES[currentMonth]} ${currentYear}`);
     } else if (res.status === 403) {
-      // No es admin → no puede ver el calendario de equipo, se muestra vacío
       console.warn('⚠️ Sin permisos para ver el calendario de equipo.');
       eventos = [];
+    } else if (res.status === 400) {
+      console.warn('⚠️ Parámetros inválidos al pedir el calendario.');
+      eventos = [];
     } else {
-      console.warn('⚠️ No se pudieron cargar los eventos.');
+      console.warn(`⚠️ No se pudieron cargar los eventos (HTTP ${res.status}).`);
       eventos = [];
     }
   } catch (error) {
@@ -102,11 +117,11 @@ async function cargarEventos() {
 // Mapea el tipo del back al tipo CSS del calendario
 function mapearTipo(tipo) {
   switch (tipo) {
-    case 'vacaciones':    return 'annual';
+    case 'vacaciones':      return 'annual';
     case 'baja_medica':
-    case 'baja':          return 'sick';
+    case 'baja':            return 'sick';
     case 'asuntos_propios': return 'holiday';
-    default:              return 'annual';
+    default:                return 'annual';
   }
 }
 
@@ -120,9 +135,9 @@ function renderCalendar() {
 
   label.textContent = `${MESES[currentMonth]} ${currentYear}`;
 
-  const firstDay     = new Date(currentYear, currentMonth, 1);
-  const lastDay      = new Date(currentYear, currentMonth + 1, 0);
-  const todayDate    = new Date();
+  const firstDay  = new Date(currentYear, currentMonth, 1);
+  const lastDay   = new Date(currentYear, currentMonth + 1, 0);
+  const todayDate = new Date();
 
   // Ajustar día de la semana (Lun=0 ... Dom=6)
   let startDow = firstDay.getDay();
