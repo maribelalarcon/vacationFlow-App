@@ -1,10 +1,11 @@
 // ═══════════════════════════════════════════════════════
 //   VacationFlow — Login (index.js)
 //   Conecta con POST /api/auth/login en Railway
-//   Guarda el token JWT y redirige al perfil del usuario
+//   Guarda el token JWT y el ROL, y redirige según el rol:
+//     · admin   → panel_jefe.html
+//     · usuario → perfil_usuario.html
 // ═══════════════════════════════════════════════════════
 
-// URL base de la API en producción
 const API_URL = 'https://vacationflow-api-production.up.railway.app';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -13,10 +14,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageEl    = document.getElementById('loginMessage');
     const rememberChk  = document.getElementById('check');
 
-    // ─── Si el usuario ya tiene un token guardado, va directo al perfil
-    //     (evita que tenga que volver a loguearse cada vez)
-    if (localStorage.getItem('token') || sessionStorage.getItem('token')) {
-        window.location.href = 'perfil_usuario.html';
+    // ─── Si ya hay sesión iniciada, redirigir según rol ────
+    const tokenGuardado = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const rolGuardado   = localStorage.getItem('rol')   || sessionStorage.getItem('rol');
+
+    if (tokenGuardado) {
+        if (rolGuardado === 'admin') {
+            window.location.href = 'panel_jefe.html';
+        } else {
+            window.location.href = 'perfil_usuario.html';
+        }
         return;
     }
 
@@ -26,13 +33,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const email    = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
 
-        // Validación básica en el front
         if (!email || !password) {
             showMessage('Por favor, rellena todos los campos.', 'error');
             return;
         }
 
-        // Deshabilitar el botón mientras procesa
         submitBtn.disabled = true;
         submitBtn.innerHTML = 'Accediendo...';
         showMessage('', '');
@@ -47,28 +52,30 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (response.ok) {
-                // ✅ Login correcto: guardamos el token
-                //    Si marcó "Recordar sesión" → localStorage (persiste al cerrar navegador)
-                //    Si no                    → sessionStorage (se borra al cerrar)
+                // ✅ Login correcto: guardamos token, rol y userId
                 const storage = rememberChk.checked ? localStorage : sessionStorage;
-                storage.setItem('token', data.token);
+                storage.setItem('token',  data.token);
+                storage.setItem('rol',    data.rol    || 'usuario');
+                storage.setItem('userId', data.userId || '');
 
                 showMessage('✅ ¡Bienvenido! Redirigiendo...', 'success');
 
+                // ─── Redirección según rol ────────────────────
                 setTimeout(() => {
-                    window.location.href = 'perfil_usuario.html';
+                    if (data.rol === 'admin') {
+                        window.location.href = 'panel_jefe.html';
+                    } else {
+                        window.location.href = 'perfil_usuario.html';
+                    }
                 }, 800);
 
             } else {
-                // ⚠️ Credenciales incorrectas u otro error del back
-                //    El back devuelve { message: "Las credenciales no son correctas." }
                 showMessage('❌ ' + (data.message || 'No se pudo iniciar sesión.'), 'error');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = 'Acceder &nbsp; →';
             }
 
         } catch (error) {
-            // ❌ Fallo de red / servidor caído
             console.error('Error en login:', error);
             showMessage('❌ No se pudo conectar con el servidor. Inténtalo más tarde.', 'error');
             submitBtn.disabled = false;
@@ -76,7 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ─── Mostrar mensaje debajo del botón ──────────────────
     function showMessage(msg, type) {
         messageEl.textContent = msg;
         messageEl.className = 'mensaje-estado ' + (type || '');

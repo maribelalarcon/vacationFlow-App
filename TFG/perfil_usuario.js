@@ -10,21 +10,14 @@
 
 const API_URL = 'https://vacationflow-api-production.up.railway.app';
 
-// ─── PROTECCIÓN DE RUTA ───────────────────────────────
-// Obtenemos el token del storage. Si no hay, no puedes entrar.
 const token = localStorage.getItem('token') || sessionStorage.getItem('token');
 
 if (!token) {
-  // Sin token → redirigir al login
   window.location.href = 'index.html';
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-  // ═══════════════════════════════════════════════════════
-  //   DATOS MOCK (hasta que tus compañeros hagan los endpoints)
-  // ═══════════════════════════════════════════════════════
-  // Historial de solicitudes del usuario
   const solicitudesMock = [
     {
       desde: '2023-10-10',
@@ -46,7 +39,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   ];
 
-  // Presencia del equipo (quién está de vacaciones hoy)
   const presenciaEquipo = [
     { nombre: 'Elena Smith',  motivo: 'Vacaciones' },
     { nombre: 'Marco Rossi',  motivo: 'Médica' }
@@ -59,13 +51,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   let disponibilidad = null;
 
   try {
-    // GET /api/users/profile → devuelve { id, nombre, apellidos, email, rol }
     const resProfile = await fetch(`${API_URL}/api/users/profile`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
     if (resProfile.status === 401) {
-      // Token inválido o caducado → forzar logout
       cerrarSesion();
       return;
     }
@@ -74,15 +64,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     usuario = await resProfile.json();
 
-    // GET /yo/disponible?usuario_id=X → días de vacaciones
-    const resDisp = await fetch(
-      `${API_URL}/yo/disponible?usuario_id=${usuario.id}`
-    );
+    // ✅ CORREGIDO: ahora se envía el token para que el back sepa quién eres
+    const resDisp = await fetch(`${API_URL}/yo/disponible`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
 
     if (resDisp.ok) {
       disponibilidad = await resDisp.json();
     } else {
-      // Si falla, usamos valores por defecto
       disponibilidad = { dias_totales: 30, dias_consumidos: 0, dias_disponibles: 30 };
     }
 
@@ -102,22 +91,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('userJoinDate').textContent = `📅 ${usuario.email}`;
   document.title = `VacationFlow - ${nombreCompleto}`;
 
-  // Avatar con la inicial del nombre si no hay imagen
   const avatarEl = document.getElementById('userAvatar');
   avatarEl.alt = nombreCompleto;
 
   // ═══════════════════════════════════════════════════════
   //   3. RENDERIZAR STATS DE DISPONIBILIDAD
   // ═══════════════════════════════════════════════════════
-  const cuota       = disponibilidad.dias_totales || 0;
-  const consumidos  = disponibilidad.dias_consumidos || 0;
-  const restantes   = disponibilidad.dias_disponibles || 0;
+  const cuota      = disponibilidad.dias_totales || 0;
+  const consumidos = disponibilidad.dias_consumidos || 0;
+  const restantes  = disponibilidad.dias_disponibles || 0;
 
   document.getElementById('statCuota').textContent      = cuota;
   document.getElementById('statConsumidos').textContent = consumidos;
   document.getElementById('statRestantes').textContent  = restantes;
 
-  // Sidebar
   document.getElementById('sidebarDays').textContent = restantes;
   document.getElementById('sidebarUnit').textContent = restantes === 1 ? 'día' : 'días';
 
@@ -132,12 +119,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   subEl.textContent     = `${consumidos} de ${cuota} días usados`;
   percentEl.textContent = `${porcentaje}%`;
 
-  // Animación: arranca en 0 y crece hasta el valor real
   setTimeout(() => {
     barFill.style.width = `${porcentaje}%`;
   }, 100);
 
-  // Si ha usado >75% de los días, cambiar color a aviso
   if (porcentaje >= 75) {
     barFill.classList.add('warning');
     percentEl.style.color = '#f39c12';
@@ -145,14 +130,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ═══════════════════════════════════════════════════════
   //   5. RENDERIZAR HISTORIAL DE SOLICITUDES (mock)
-  //   ⚠️ Pendiente: sustituir por GET /solicitudes/mias
-  //   cuando el back lo implemente.
   // ═══════════════════════════════════════════════════════
   renderHistorial(solicitudesMock);
 
   // ═══════════════════════════════════════════════════════
   //   6. RENDERIZAR PRESENCIA DEL EQUIPO (mock)
-  //   ⚠️ Pendiente: sustituir por endpoint real
   // ═══════════════════════════════════════════════════════
   renderPresenciaEquipo(presenciaEquipo);
 
@@ -163,8 +145,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      const ok = confirm('¿Estás seguro de que deseas cerrar sesión?');
-      if (ok) cerrarSesion();
+      if (confirm('¿Estás seguro de que deseas cerrar sesión?')) cerrarSesion();
     });
   }
 
@@ -176,7 +157,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 //   FUNCIONES AUXILIARES
 // ═══════════════════════════════════════════════════════
 
-// ─── Renderizar historial de solicitudes en la tabla
 function renderHistorial(solicitudes) {
   const tbody     = document.getElementById('historyTableBody');
   const emptyHist = document.getElementById('historyEmpty');
@@ -211,7 +191,6 @@ function renderHistorial(solicitudes) {
   }).join('');
 }
 
-// ─── Renderizar presencia del equipo (panel derecho)
 function renderPresenciaEquipo(lista) {
   const cont = document.getElementById('teamPresence');
   cont.innerHTML = lista.map(p => `
@@ -225,21 +204,22 @@ function renderPresenciaEquipo(lista) {
   `).join('');
 }
 
-// ─── Cerrar sesión: borra el token y redirige al login
 function cerrarSesion() {
   localStorage.removeItem('token');
+  localStorage.removeItem('rol');
+  localStorage.removeItem('userId');
   sessionStorage.removeItem('token');
+  sessionStorage.removeItem('rol');
+  sessionStorage.removeItem('userId');
   window.location.href = 'index.html';
 }
 
-// ─── Formateo de fechas: "2023-10-10" → "10 Oct"
 function formatearFechaCorta(iso) {
   const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   const [año, mes, dia] = iso.split('-');
   return `${parseInt(dia, 10)} ${meses[parseInt(mes, 10) - 1]}`;
 }
 
-// ─── "10 Oct – 15 Oct, 2023"
 function formatearRango(desde, hasta) {
   const añoHasta = hasta.split('-')[0];
   return `${formatearFechaCorta(desde)} – ${formatearFechaCorta(hasta)}, ${añoHasta}`;

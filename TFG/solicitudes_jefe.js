@@ -1,227 +1,259 @@
 // ═══════════════════════════════════════════════════════
-//   VacationFlow — Solicitudes del Jefe
-//   Conecta con:
-//     · GET /api/admin/vacations/pending → solicitudes pendientes
-//     · GET /api/users/profile           → días del sidebar
+//   VacationFlow — Solicitudes Jefe (solicitudes_jefe.js)
 // ═══════════════════════════════════════════════════════
 
-const API_URL = 'https://vacationflow-api-production.up.railway.app';
+const BASE = 'https://vacationflow-api-production.up.railway.app';
 
-// ─── PROTECCIÓN DE RUTA ───────────────────────────────
-const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-if (!token) window.location.href = 'index.html';
+function getToken() {
+  return localStorage.getItem('token') || sessionStorage.getItem('token');
+}
 
-// ─── ESTADO ───────────────────────────────────────────
-let solicitudes  = [];
-let filtroEstado = 'todos';
-let filtroTexto  = '';
-
-// ═══════════════════════════════════════════════════════
-//   AL CARGAR
-// ═══════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', async () => {
-
-  await cargarSolicitudes();
-  await cargarSidebarDias();
-  render();
-
-  // Filtros de tabs
-  document.querySelectorAll('.filtro-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      filtroEstado = btn.dataset.estado;
-      render();
-    });
-  });
-
-  // Buscador
-  document.getElementById('searchInput').addEventListener('input', e => {
-    filtroTexto = e.target.value;
-    render();
-  });
-
-  // Logout
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-        localStorage.removeItem('token');
-        sessionStorage.removeItem('token');
-        window.location.href = 'index.html';
-      }
-    });
-  }
-});
-
-// ═══════════════════════════════════════════════════════
-//   CARGAR SOLICITUDES DEL BACK
-// ═══════════════════════════════════════════════════════
-async function cargarSolicitudes() {
+// ─── PROTECCIÓN: solo admin ───────────────────────────
+const _token = getToken();
+if (!_token) {
+  window.location.replace('index.html');
+} else {
   try {
-    const res = await fetch(`${API_URL}/api/admin/vacations/pending`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-
-    if (res.status === 401) { cerrarSesion(); return; }
-    if (res.status === 403) {
-      alert('No tienes permisos de administrador.');
-      window.location.href = 'perfil_usuario.html';
-      return;
+    const payload = JSON.parse(atob(_token.split('.')[1]));
+    if (payload.rol !== 'admin') {
+      alert('🚫 Acceso restringido: esta zona es solo para jefes.');
+      window.location.replace('perfil_usuario.html');
     }
-    if (!res.ok) throw new Error('Error al cargar solicitudes');
-
-    const data = await res.json();
-
-    // Mapear datos del back
-    // El back devuelve: { id, usuario_id, nombre, apellidos, email, tipo, fecha_inicio, fecha_fin, estado, comentario }
-    solicitudes = data.map(s => ({
-      id:       s.id,
-      nombre:   `${s.nombre} ${s.apellidos || ''}`.trim(),
-      email:    s.email,
-      tipo:     s.tipo     || s.type   || 'vacaciones',
-      desde:    s.fecha_inicio || s.start_date,
-      hasta:    s.fecha_fin    || s.end_date,
-      estado:   s.estado   || s.status || 'pendiente',
-      comentario: s.comentario || s.comment || '',
-      userId:   s.usuario_id  || s.user_id
-    }));
-
-    console.log(`✅ ${solicitudes.length} solicitudes cargadas`);
-
-  } catch (error) {
-    console.error('❌ Error:', error);
-    solicitudes = [];
+  } catch {
+    window.location.replace('index.html');
   }
 }
 
-// ═══════════════════════════════════════════════════════
-//   RENDER
-// ═══════════════════════════════════════════════════════
-function render() {
-  const texto = filtroTexto.trim().toLowerCase();
+// ─── COLORES AVATARES ─────────────────────────────────────
+const COLORES = ['av1','av2','av3','av4','av5'];
 
-  let lista = solicitudes.filter(s => {
-    const coincideTexto  = s.nombre.toLowerCase().includes(texto) || s.email.toLowerCase().includes(texto);
-    const coincideEstado = filtroEstado === 'todos' || s.estado.toLowerCase() === filtroEstado;
-    return coincideTexto && coincideEstado;
-  });
-
-  const tbody     = document.getElementById('solicitudesBody');
-  const emptyEl   = document.getElementById('emptyState');
-
-  tbody.innerHTML = '';
-  lista.forEach(s => tbody.appendChild(crearFila(s)));
-  emptyEl.style.display = lista.length === 0 ? 'block' : 'none';
-
-  actualizarStats();
+// ─── CARGAR SOLICITUDES PENDIENTES ───────────────────────
+async function cargarPendientes() {
+  try {
+    const res = await fetch(`${BASE}/api/admin/vacations/pending`, {
+      headers: { 'Authorization': `Bearer ${getToken()}` }
+    });
+    if (res.status === 401) { window.location.replace('index.html'); return; }
+    if (res.status === 403) { window.location.replace('perfil_usuario.html'); return; }
+    const data = await res.json();
+    renderSolicitudes(data);
+    actualizarBadge(data.length);
+    actualizarHistorico(data.length);
+  } catch (err) {
+    console.error('Error cargando pendientes:', err);
+    renderSolicitudes([]);
+    actualizarBadge(0);
+    actualizarHistorico(0);
+  }
 }
 
-// ═══════════════════════════════════════════════════════
-//   CREAR FILA
-// ═══════════════════════════════════════════════════════
-function crearFila(s) {
-  const tr      = document.createElement('tr');
-  const inicial = s.nombre.charAt(0).toUpperCase();
-  const dias    = calcularDias(s.desde, s.hasta);
+function renderSolicitudes(solicitudes) {
+  const grid = document.getElementById('solicitudes-grid');
+  grid.innerHTML = '';
 
-  const claseEstado = {
-    'pendiente': 'tag-pendiente',
-    'aprobado':  'tag-aprobado',
-    'rechazado': 'tag-rechazado'
-  }[s.estado?.toLowerCase()] || 'tag-pendiente';
+  if (!solicitudes.length) {
+    grid.innerHTML = '<p class="cargando">✅ No hay solicitudes pendientes.</p>';
+    return;
+  }
 
-  tr.innerHTML = `
-    <td>
-      <div class="employee-cell">
-        <div class="employee-avatar">${inicial}</div>
+  solicitudes.forEach((s, i) => {
+    const iniciales = `${s.empleado.nombre[0]}${s.empleado.apellidos[0]}`;
+    const tipoClass = s.tipo === 'vacaciones' ? 'vacaciones' : s.tipo === 'baja_medica' ? 'baja' : 'asuntos';
+    const tipoLabel = s.tipo === 'vacaciones' ? 'VACACIONES' : s.tipo === 'baja_medica' ? 'BAJA MÉDICA' : 'ASUNTOS PROPIOS';
+    const fechaI = formatFecha(s.fecha_inicio);
+    const fechaF = formatFecha(s.fecha_fin);
+
+    const card = document.createElement('div');
+    card.className = 'solicitud-card';
+    card.dataset.id = s.id;
+    card.innerHTML = `
+      <div class="sol-top">
+        <div class="sol-avatar ${COLORES[i % COLORES.length]}">${iniciales}</div>
         <div>
-          <div class="employee-name">${s.nombre}</div>
-          <div style="font-size:11px;color:var(--text-sub);">${s.email}</div>
+          <div class="sol-nombre">${s.empleado.nombre} ${s.empleado.apellidos}</div>
+          <span class="sol-tag ${tipoClass}">${tipoLabel}</span>
         </div>
       </div>
-    </td>
-    <td>${formatearTipo(s.tipo)}</td>
-    <td>${formatearFecha(s.desde)}</td>
-    <td>${formatearFecha(s.hasta)}</td>
-    <td><span style="font-weight:700;">${dias}</span></td>
-    <td><span class="status-tag ${claseEstado}">● ${s.estado.toUpperCase()}</span></td>
-    <td>
-      <a href="detalle_solicitud.html?id=${s.id}" class="btn-ver">Ver →</a>
-    </td>
-  `;
-
-  return tr;
+      <div class="sol-fechas">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        ${fechaI} — ${fechaF}
+        <span class="sol-dias">${s.total_dias} días</span>
+      </div>
+      <div class="sol-actions">
+        <button class="btn-aprobar" onclick="aprobar(this, ${s.id})">Aprobar</button>
+        <button class="btn-rechazar" onclick="rechazar(this, ${s.id})">Rechazar</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
 }
 
-// ═══════════════════════════════════════════════════════
-//   STATS
-// ═══════════════════════════════════════════════════════
-function actualizarStats() {
-  document.getElementById('statTotal').textContent      = solicitudes.length;
-  document.getElementById('statPendientes').textContent = solicitudes.filter(s => s.estado?.toLowerCase() === 'pendiente').length;
-  document.getElementById('statAprobadas').textContent  = solicitudes.filter(s => s.estado?.toLowerCase() === 'aprobado').length;
-  document.getElementById('statRechazadas').textContent = solicitudes.filter(s => s.estado?.toLowerCase() === 'rechazado').length;
+function actualizarBadge(n) {
+  document.getElementById('acciones-badge').textContent = `${n} Acciones Requeridas`;
 }
 
-// ═══════════════════════════════════════════════════════
-//   SIDEBAR DÍAS
-// ═══════════════════════════════════════════════════════
-async function cargarSidebarDias() {
+function actualizarHistorico(pendientes) {
+  document.getElementById('historico-sub').textContent =
+    `${pendientes} solicitudes pendientes de revisión este mes.`;
+}
+
+// ─── HELPER FECHA ─────────────────────────────────────────
+function formatFecha(str) {
+  if (!str) return '';
+  const d = new Date(str);
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return `${d.getDate()} ${meses[d.getMonth()]}`;
+}
+
+// ─── APROBAR ─────────────────────────────────────────────
+async function aprobar(btn, id) {
   try {
-    const resMe = await fetch(`${API_URL}/api/users/profile`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+    const res = await fetch(`${BASE}/api/admin/vacations/${id}/approve`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${getToken()}` }
     });
-    if (!resMe.ok) return;
-    const me = await resMe.json();
-
-    const resDisp = await fetch(
-      `${API_URL}/yo/disponible?usuario_id=${me.id}`,
-      { headers: { 'Authorization': `Bearer ${token}` } }
-    );
-    if (!resDisp.ok) return;
-    const disp = await resDisp.json();
-
-    const restantes = disp.dias_disponibles || 0;
-    const el   = document.getElementById('sidebarDays');
-    const unit = document.getElementById('sidebarUnit');
-    if (el)   el.textContent   = restantes;
-    if (unit) unit.textContent = restantes === 1 ? 'día' : 'días';
-  } catch (e) {
-    console.warn('⚠️ No se pudo cargar el sidebar');
+    const data = await res.json();
+    if (res.ok) {
+      btn.closest('.solicitud-card').classList.add('aprobada');
+      btn.disabled = true;
+      btn.closest('.solicitud-card').querySelector('.btn-rechazar').disabled = true;
+      showToast('✅ Solicitud aprobada correctamente.');
+    } else {
+      showToast('⚠️ ' + data.message);
+    }
+  } catch {
+    showToast('❌ No se pudo conectar con el servidor.');
   }
 }
 
-// ═══════════════════════════════════════════════════════
-//   HELPERS
-// ═══════════════════════════════════════════════════════
-function formatearFecha(iso) {
-  if (!iso) return '—';
-  const fecha = iso.split('T')[0];
-  const [año, mes, dia] = fecha.split('-');
-  return `${dia}/${mes}/${año}`;
+// ─── RECHAZAR ────────────────────────────────────────────
+async function rechazar(btn, id) {
+  try {
+    const res = await fetch(`${BASE}/api/admin/vacations/${id}/reject`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${getToken()}` }
+    });
+    const data = await res.json();
+    if (res.ok) {
+      btn.closest('.solicitud-card').classList.add('rechazada');
+      btn.disabled = true;
+      btn.closest('.solicitud-card').querySelector('.btn-aprobar').disabled = true;
+      showToast('❌ Solicitud rechazada.');
+    } else {
+      showToast('⚠️ ' + data.message);
+    }
+  } catch {
+    showToast('❌ No se pudo conectar con el servidor.');
+  }
 }
 
-function formatearTipo(tipo) {
-  const tipos = {
-    'vacaciones':     '🏖️ Vacaciones',
-    'baja_medica':    '🏥 Baja Médica',
-    'asuntos_propios':'📋 Asuntos Propios',
-    'baja':           '🏥 Baja'
-  };
-  return tipos[tipo] || tipo || '—';
+// ─── CALENDARIO ───────────────────────────────────────────
+const eventos = [];
+const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const hoyInicio = new Date();
+let currentYear  = hoyInicio.getFullYear();
+let currentMonth = hoyInicio.getMonth();
+
+function renderCalendar() {
+  const grid = document.getElementById('cal-grid');
+  const label = document.getElementById('cal-month');
+  grid.innerHTML = '';
+  label.textContent = `${MESES_ES[currentMonth]} ${currentYear}`;
+
+  const firstDay = new Date(currentYear, currentMonth, 1);
+  const lastDay  = new Date(currentYear, currentMonth + 1, 0);
+  const today    = new Date();
+  let startDow   = firstDay.getDay();
+  startDow = startDow === 0 ? 6 : startDow - 1;
+
+  const prevLast   = new Date(currentYear, currentMonth, 0).getDate();
+  const totalCells = Math.ceil((startDow + lastDay.getDate()) / 7) * 7;
+
+  for (let i = 0; i < totalCells; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cal-day';
+    let dayNum, cellDate;
+
+    if (i < startDow) {
+      dayNum = prevLast - startDow + i + 1;
+      cellDate = new Date(currentYear, currentMonth - 1, dayNum);
+      cell.classList.add('other-month');
+    } else if (i >= startDow + lastDay.getDate()) {
+      dayNum = i - startDow - lastDay.getDate() + 1;
+      cellDate = new Date(currentYear, currentMonth + 1, dayNum);
+      cell.classList.add('other-month');
+    } else {
+      dayNum = i - startDow + 1;
+      cellDate = new Date(currentYear, currentMonth, dayNum);
+    }
+
+    if (
+      cellDate.getDate() === today.getDate() &&
+      cellDate.getMonth() === today.getMonth() &&
+      cellDate.getFullYear() === today.getFullYear()
+    ) cell.classList.add('today');
+
+    const numEl = document.createElement('div');
+    numEl.className = 'day-num';
+    numEl.textContent = cellDate.getDate();
+    cell.appendChild(numEl);
+
+    eventos.forEach(ev => {
+      const ini = new Date(ev.inicio); ini.setHours(0,0,0,0);
+      const fin = new Date(ev.fin);   fin.setHours(0,0,0,0);
+      cellDate.setHours(0,0,0,0);
+      if (cellDate >= ini && cellDate <= fin) {
+        const bar = document.createElement('div');
+        bar.className = `event-bar ${ev.tipo}`;
+        bar.textContent = cellDate.getTime() === ini.getTime() ? ev.nombre : '';
+        bar.title = ev.nombre;
+        cell.appendChild(bar);
+      }
+    });
+
+    grid.appendChild(cell);
+  }
 }
 
-function calcularDias(desde, hasta) {
-  if (!desde || !hasta) return '—';
-  const d1 = new Date(desde);
-  const d2 = new Date(hasta);
-  return Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+async function cargarCalendario() {
+  try {
+    const res = await fetch(
+      `${BASE}/api/admin/calendar?anio=${currentYear}&mes=${currentMonth + 1}`,
+      { headers: { 'Authorization': `Bearer ${getToken()}` } }
+    );
+    const data = await res.json();
+    eventos.length = 0;
+    data.eventos.forEach(e => {
+      eventos.push({
+        nombre: e.empleado.nombre,
+        tipo: e.tipo === 'vacaciones' ? 'annual' : 'sick',
+        inicio: e.fecha_inicio.slice(0, 10),
+        fin: e.fecha_fin.slice(0, 10)
+      });
+    });
+  } catch { eventos.length = 0; }
+  renderCalendar();
 }
 
-function cerrarSesion() {
-  localStorage.removeItem('token');
-  sessionStorage.removeItem('token');
-  window.location.href = 'index.html';
+document.getElementById('prev-btn').addEventListener('click', () => {
+  currentMonth--;
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  cargarCalendario();
+});
+document.getElementById('next-btn').addEventListener('click', () => {
+  currentMonth++;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  cargarCalendario();
+});
+
+// ─── TOAST ────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+// ─── INIT ─────────────────────────────────────────────────
+cargarPendientes();
+cargarCalendario();
