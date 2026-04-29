@@ -15,7 +15,7 @@ const API_URL = localStorage.getItem('vacationflow_api_url') || 'https://vacatio
 const token = localStorage.getItem('token') || sessionStorage.getItem('token');
 
 if (!token) {
-  window.location.href = 'index.html';
+  window.location.href = '/index.html';
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -206,7 +206,7 @@ function cerrarSesion() {
   sessionStorage.removeItem('token');
   sessionStorage.removeItem('rol');
   sessionStorage.removeItem('userId');
-  window.location.href = 'index.html';
+  window.location.href = '/index.html';
 }
 
 function formatearFechaCorta(iso) {

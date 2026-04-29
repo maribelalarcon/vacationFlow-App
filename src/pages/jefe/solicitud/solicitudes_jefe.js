@@ -11,16 +11,16 @@ function getToken() {
 // ─── PROTECCIÓN: solo admin ───────────────────────────
 const _token = getToken();
 if (!_token) {
-  window.location.replace('index.html');
+  window.location.replace('/index.html');
 } else {
   try {
     const payload = JSON.parse(atob(_token.split('.')[1]));
     if (payload.rol !== 'admin') {
       alert('🚫 Acceso restringido: esta zona es solo para jefes.');
-      window.location.replace('perfil_usuario.html');
+      window.location.replace('/src/pages/usuario/perfil_usuario.html');
     }
   } catch {
-    window.location.replace('index.html');
+    window.location.replace('/index.html');
   }
 }
 
@@ -33,8 +33,8 @@ async function cargarPendientes() {
     const res = await fetch(`${BASE}/api/admin/vacations/pending`, {
       headers: { 'Authorization': `Bearer ${getToken()}` }
     });
-    if (res.status === 401) { window.location.replace('index.html'); return; }
-    if (res.status === 403) { window.location.replace('perfil_usuario.html'); return; }
+    if (res.status === 401) { window.location.replace('/index.html'); return; }
+    if (res.status === 403) { window.location.replace('/src/pages/usuario/perfil_usuario.html'); return; }
     const data = await res.json();
     renderSolicitudes(data);
     actualizarBadge(data.length);
@@ -125,7 +125,7 @@ function renderSolicitudes(solicitudes) {
 }
 
 function openDetalle(id) {
-  window.location.href = `detalle_solicitud.html#id=${id}`;
+  window.location.href = `/src/pages/solicitud/detalle_solicitud.html#id=${id}`;
 }
 
 function actualizarBadge(n) {
@@ -140,7 +140,7 @@ function actualizarHistorico(pendientes) {
 // ─── HELPER FECHA ─────────────────────────────────────────
 function formatFecha(str) {
   if (!str) return '';
-  const d = new Date(str);
+  const d = parseDateOnly(str);
   const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   return `${d.getDate()} ${meses[d.getMonth()]}`;
 }
@@ -164,6 +164,11 @@ async function aprobar(btn, id) {
   } catch {
     showToast('❌ No se pudo conectar con el servidor.');
   }
+}
+
+function parseDateOnly(value) {
+  const [year, month, day] = String(value).split('T')[0].split('-').map(Number);
+  return new Date(year, (month || 1) - 1, day || 1);
 }
 
 // ─── RECHAZAR ────────────────────────────────────────────

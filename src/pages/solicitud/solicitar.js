@@ -12,7 +12,7 @@ const API_URL = localStorage.getItem('vacationflow_api_url') || 'https://vacatio
 // ─── PROTECCIÓN DE RUTA ───────────────────────────────
 const token = localStorage.getItem('token') || sessionStorage.getItem('token');
 if (!token) {
-  window.location.href = 'index.html';
+  window.location.href = '/index.html';
 }
 
 // ─── ESTADO DE LA PÁGINA ──────────────────────────────
@@ -233,7 +233,7 @@ async function handleSubmit() {
     if (response.ok) {
       showToast('✅ Solicitud enviada correctamente.');
       setTimeout(() => {
-        window.location.href = 'perfil_usuario.html';
+        window.location.href = '/src/pages/usuario/perfil_usuario.html';
       }, 1800);
     } else {
       showToast('⚠️ ' + (data.message || 'Error al enviar la solicitud.'), false);
@@ -257,7 +257,7 @@ function resetSubmitBtn(btn) {
 // ═══════════════════════════════════════════════════════
 function handleCancel() {
   if (confirm('¿Seguro que quieres cancelar? Se perderán los datos.')) {
-    window.location.href = 'perfil_usuario.html';
+    window.location.href = '/src/pages/usuario/perfil_usuario.html';
   }
 }
 
@@ -282,5 +282,5 @@ function cerrarSesion() {
   sessionStorage.removeItem('token');
   sessionStorage.removeItem('rol');
   sessionStorage.removeItem('userId');
-  window.location.href = 'index.html';
+  window.location.href = '/index.html';
 }

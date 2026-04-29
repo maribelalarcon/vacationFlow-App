@@ -12,13 +12,13 @@ const API_URL = localStorage.getItem('vacationflow_api_url') || 'https://vacatio
 
 // ─── PROTECCIÓN DE RUTA ───────────────────────────────
 const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-if (!token) window.location.href = 'index.html';
+if (!token) window.location.href = '/index.html';
 
 // ─── ID DE LA SOLICITUD DE LA URL ─────────────────────
 const params = new URLSearchParams(window.location.search);
 const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
 const solicitudId = params.get('id') || hashParams.get('id');
-if (!solicitudId) window.location.href = 'solicitudes_jefe.html';
+if (!solicitudId) window.location.href = '/src/pages/jefe/solicitud/solicitudes_jefe.html';
 
 // ─── DATOS DE LA SOLICITUD ────────────────────────────
 let solicitudActual = null;
@@ -68,7 +68,7 @@ async function cargarDetalle() {
     if (res.status === 401) { cerrarSesion(); return; }
     if (res.status === 403) {
       alert('No tienes permisos de administrador.');
-      window.location.href = 'perfil_usuario.html';
+      window.location.href = '/src/pages/usuario/perfil_usuario.html';
       return;
     }
     if (!res.ok) throw new Error('Error al cargar solicitudes');
@@ -78,7 +78,7 @@ async function cargarDetalle() {
 
     if (!solicitudActual) {
       alert('Solicitud no encontrada.');
-      window.location.href = 'solicitudes_jefe.html';
+      window.location.href = '/src/pages/jefe/solicitud/solicitudes_jefe.html';
       return;
     }
 
@@ -189,7 +189,7 @@ async function accionSolicitud(accion) {
 
       // Volver a la lista después de 2 segundos
       setTimeout(() => {
-        window.location.href = 'solicitudes_jefe.html';
+        window.location.href = '/src/pages/jefe/solicitud/solicitudes_jefe.html';
       }, 2000);
     } else {
       showToast('❌ ' + (data.message || 'Error al procesar la solicitud.'), false);
@@ -247,7 +247,7 @@ function showToast(msg, ok = true) {
 // ═══════════════════════════════════════════════════════
 function formatearFecha(iso) {
   if (!iso) return '—';
-  const [, mes, dia] = iso.split('T')[0].split('-');
+  const [, mes, dia] = String(iso).split('T')[0].split('-');
   const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   return `${parseInt(dia)} ${meses[parseInt(mes) - 1]}`;
 }
@@ -264,9 +264,14 @@ function formatearTipo(tipo) {
 
 function calcularDias(desde, hasta) {
   if (!desde || !hasta) return '—';
-  const d1 = new Date(desde);
-  const d2 = new Date(hasta);
+  const d1 = parseDateOnly(desde);
+  const d2 = parseDateOnly(hasta);
   return Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+}
+
+function parseDateOnly(value) {
+  const [year, month, day] = String(value).split('T')[0].split('-').map(Number);
+  return new Date(year, (month || 1) - 1, day || 1);
 }
 
 function cerrarSesion() {
@@ -276,5 +281,5 @@ function cerrarSesion() {
   sessionStorage.removeItem('token');
   sessionStorage.removeItem('rol');
   sessionStorage.removeItem('userId');
-  window.location.href = 'index.html';
+  window.location.href = '/index.html';
 }

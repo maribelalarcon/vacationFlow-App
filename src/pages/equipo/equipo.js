@@ -13,7 +13,7 @@ const API_URL = localStorage.getItem('vacationflow_api_url') || 'https://vacatio
 // ─── PROTECCIÓN DE RUTA ───────────────────────────────
 const token = localStorage.getItem('token') || sessionStorage.getItem('token');
 if (!token) {
-  window.location.href = 'index.html';
+  window.location.href = '/index.html';
 }
 
 // ─── ESTADO DE LA UI ──────────────────────────────────
@@ -46,14 +46,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   render();
 
   // 3) Logout
-  const logoutBtn = document.querySelector('a[href="index.html"]');
+  const logoutBtn = document.querySelector('a[href="/index.html"]');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', (e) => {
       e.preventDefault();
       if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
         localStorage.removeItem('token');
         sessionStorage.removeItem('token');
-        window.location.href = 'index.html';
+        window.location.href = '/index.html';
       }
     });
   }
@@ -106,12 +106,12 @@ async function cargarUsuarios() {
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('rol');
       sessionStorage.removeItem('userId');
-      window.location.href = 'index.html';
+      window.location.href = '/index.html';
       return;
     }
 
     if (res.status === 403) {
-      window.location.href = 'perfil_usuario.html';
+      window.location.href = '/src/pages/usuario/perfil_usuario.html';
       return;
     }
 
@@ -208,7 +208,7 @@ function crearFila(u) {
 
   // Al hacer clic en la fila → ir al perfil del empleado
   tr.addEventListener('click', () => {
-    window.location.href = `veruser_jefe.html#id=${u.id}`;
+    window.location.href = `/src/pages/jefe/veruser_jefe.html#id=${u.id}`;
   });
 
   return tr;

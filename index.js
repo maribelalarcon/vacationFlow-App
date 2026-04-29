@@ -20,9 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (tokenGuardado) {
         if (rolGuardado === 'admin') {
-            window.location.href = 'panel_jefe.html';
+            window.location.href = '/src/pages/jefe/panel_jefe.html';
         } else {
-            window.location.href = 'perfil_usuario.html';
+            window.location.href = '/src/pages/usuario/perfil_usuario.html';
         }
         return;
     }
@@ -63,9 +63,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 // ─── Redirección según rol ────────────────────
                 setTimeout(() => {
                     if (data.rol === 'admin') {
-                        window.location.href = 'panel_jefe.html';
+                        window.location.href = '/src/pages/jefe/panel_jefe.html';
                     } else {
-                        window.location.href = 'perfil_usuario.html';
+                        window.location.href = '/src/pages/usuario/perfil_usuario.html';
                     }
                 }, 800);
 

@@ -29,7 +29,7 @@
     // ─── 4. Sin token → al login ──────────────────────────
     if (!token) {
         console.log('[VFAuth] Sin token → al login');
-        window.location.replace('index.html');
+        window.location.replace('/index.html');
         return;
     }
 
@@ -37,7 +37,7 @@
     if (requiredRole === 'admin' && rol !== 'admin') {
         console.log('[VFAuth] 🚫 No eres admin → al perfil');
         alert('🚫 Acceso restringido: esta zona es solo para jefes.');
-        window.location.replace('perfil_usuario.html');
+        window.location.replace('/src/pages/usuario/perfil_usuario.html');
         return;
     }
 
@@ -80,7 +80,7 @@
             sessionStorage.removeItem('token');
             sessionStorage.removeItem('rol');
             sessionStorage.removeItem('userId');
-            window.location.replace('index.html');
+            window.location.replace('/index.html');
         },
 
         authHeader() {

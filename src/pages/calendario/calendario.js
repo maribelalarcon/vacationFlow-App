@@ -12,7 +12,7 @@ const API_URL = localStorage.getItem('vacationflow_api_url') || 'https://vacatio
 // ─── PROTECCIÓN DE RUTA ───────────────────────────────
 const token = localStorage.getItem('token') || sessionStorage.getItem('token');
 if (!token) {
-  window.location.href = 'index.html';
+  window.location.href = '/index.html';
 }
 
 // ─── MESES EN ESPAÑOL ─────────────────────────────────
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         sessionStorage.removeItem('token');
         sessionStorage.removeItem('rol');
         sessionStorage.removeItem('userId');
-        window.location.href = 'index.html';
+        window.location.href = '/index.html';
       }
     });
   }

@@ -13,7 +13,7 @@ const API_URL = localStorage.getItem('vacationflow_api_url') || 'https://vacatio
 // ─── PROTECCIÓN DE RUTA ───────────────────────────────
 const token = localStorage.getItem('token') || sessionStorage.getItem('token');
 if (!token) {
-  window.location.href = 'index.html';
+  window.location.href = '/index.html';
 }
 
 // ─── OBTENER ID DEL EMPLEADO DE LA URL ────────────────
@@ -24,7 +24,7 @@ const empleadoId = params.get('id') || hashParams.get('id');
 
 if (!empleadoId) {
   // Si no hay ID en la URL → volver al equipo
-  window.location.href = 'equipo.html';
+  window.location.href = '/src/pages/equipo/equipo.html';
 }
 
 // ═══════════════════════════════════════════════════════
@@ -44,12 +44,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (resEmp.status === 401) { cerrarSesion(); return; }
     if (resEmp.status === 403) {
-      window.location.href = 'perfil_usuario.html';
+      window.location.href = '/src/pages/usuario/perfil_usuario.html';
       return;
     }
     if (resEmp.status === 404) {
       alert('Empleado no encontrado.');
-      window.location.href = 'equipo.html';
+      window.location.href = '/src/pages/equipo/equipo.html';
       return;
     }
     if (!resEmp.ok) throw new Error('Error al cargar empleado');
@@ -136,7 +136,7 @@ function renderPerfil(emp, disp, solicitudes) {
 
   const proxima = solicitudes
     .filter(s => (s.estado || '').toLowerCase() === 'pendiente')
-    .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))[0] || null;
+    .sort((a, b) => parseDateOnly(a.fecha_inicio) - parseDateOnly(b.fecha_inicio))[0] || null;
   renderProximoDescanso(proxima);
 }
 
@@ -173,7 +173,7 @@ function renderHistorial(solicitudes) {
         <td><span class="days-badge">${dias}</span></td>
         <td class="tipo-name">${formatearTipo(s.tipo) || '—'}</td>
         <td><span class="status-tag ${claseEstado}">● ${(s.estado || '').toUpperCase()}</span></td>
-        <td><a class="btn-accion" href="detalle_solicitud.html#id=${s.id}" title="Ver detalle">Ver</a></td>
+        <td><a class="btn-accion" href="/src/pages/solicitud/detalle_solicitud.html#id=${s.id}" title="Ver detalle">Ver</a></td>
       </tr>
     `;
   }).join('');
@@ -239,7 +239,7 @@ function cerrarSesion() {
   sessionStorage.removeItem('token');
   sessionStorage.removeItem('rol');
   sessionStorage.removeItem('userId');
-  window.location.href = 'index.html';
+  window.location.href = '/index.html';
 }
 
 // ═══════════════════════════════════════════════════════
@@ -260,9 +260,14 @@ function formatearRango(desde, hasta) {
 
 function calcularDias(desde, hasta) {
   if (!desde || !hasta) return 0;
-  const d1 = new Date(desde);
-  const d2 = new Date(hasta);
+  const d1 = parseDateOnly(desde);
+  const d2 = parseDateOnly(hasta);
   return Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+}
+
+function parseDateOnly(value) {
+  const [year, month, day] = String(value).split('T')[0].split('-').map(Number);
+  return new Date(year, (month || 1) - 1, day || 1);
 }
 
 function formatearTipo(tipo) {

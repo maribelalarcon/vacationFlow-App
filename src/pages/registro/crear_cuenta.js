@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // ✅ Registro correcto
                 showMessage('✅ ¡Cuenta creada! Redirigiendo al login...', 'success');
                 setTimeout(() => {
-                    window.location.href = 'index.html';
+                    window.location.href = '/index.html';
                 }, 1500);
             } else {
                 // ⚠️ Error del servidor: mostramos el mensaje exacto que envía el back
