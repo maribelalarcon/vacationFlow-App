@@ -81,17 +81,13 @@
       <p class="page-sub">Gestiona las ausencias de tu equipo para las próximas semanas.</p>
     </div>
     <div class="header-right">
-      <div class="manager-profile">
+      <a href="/src/pages/usuario/perfil_usuario.html" class="manager-profile" id="managerProfileLink">
         <div class="manager-info">
           <div class="manager-name">Alex Thompson</div>
           <div class="manager-role">Director de Operaciones</div>
         </div>
         <div class="manager-avatar">AT</div>
-      </div>
-      <div class="acciones-badge" id="acciones-badge">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        0 Acciones Requeridas
-      </div>
+      </a>
     </div>
   </div>
 
@@ -111,26 +107,70 @@
     </div>
   </div>
 
-  <!-- CALENDARIO DEL EQUIPO -->
-  <div class="card" style="margin-top: 24px;">
-    <div class="cal-header">
-      <span class="card-title">Calendario de Equipo</span>
-      <div class="cal-nav">
-        <button class="nav-btn" id="prev-btn">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <span class="cal-month" id="cal-month">Julio 2024</span>
-        <button class="nav-btn" id="next-btn">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
+  <div class="bottom-grid">
+    <div class="card">
+      <div class="cal-header">
+        <span class="card-title">Calendario de Equipo</span>
+        <div class="cal-nav">
+          <button class="nav-btn" id="prev-btn">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="cal-month" id="cal-month">Julio 2024</span>
+          <button class="nav-btn" id="next-btn">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
       </div>
+
+      <div class="cal-weekdays">
+        <div>LUN</div><div>MAR</div><div>MIÉ</div>
+        <div>JUE</div><div>VIE</div><div>SÁB</div><div>DOM</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
     </div>
 
-    <div class="cal-weekdays">
-      <div>LUN</div><div>MAR</div><div>MIÉ</div>
-      <div>JUE</div><div>VIE</div><div>SÁB</div><div>DOM</div>
+    <div class="card email-card">
+      <div class="email-header">
+        <div class="email-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg>
+        </div>
+        <div>
+          <div class="card-title">Enviar Email a Empleados</div>
+          <p class="email-sub">Prepara un correo rápido para avisos internos del equipo.</p>
+        </div>
+      </div>
+
+      <form id="emailForm" class="email-form">
+        <label class="email-label" for="emailRecipient">Destinatario</label>
+        <select id="emailRecipient" class="email-input" required>
+          <option value="">Selecciona un empleado</option>
+        </select>
+
+        <label class="email-label" for="emailSubject">Asunto</label>
+        <input
+          id="emailSubject"
+          class="email-input"
+          type="text"
+          maxlength="120"
+          placeholder="Recordatorio de vacaciones..."
+          required
+        >
+
+        <label class="email-label" for="emailMessage">Mensaje</label>
+        <textarea
+          id="emailMessage"
+          class="email-input email-textarea"
+          rows="5"
+          placeholder="Escribe el cuerpo del mensaje aquí..."
+          required
+        ></textarea>
+
+        <div class="email-footer">
+          <div class="email-recipients" id="emailRecipientsPreview" aria-hidden="true"></div>
+          <button type="submit" class="email-send-btn">Enviar ahora</button>
+        </div>
+      </form>
     </div>
-    <div class="cal-grid" id="cal-grid"></div>
   </div>
 
 </main>

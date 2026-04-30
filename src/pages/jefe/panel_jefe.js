@@ -64,6 +64,7 @@ async function cargarPerfilManager() {
   }
 }
 
+
 function renderPendientes(solicitudes) {
   const list = document.getElementById('requests-list');
   list.innerHTML = '';
@@ -320,6 +321,7 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
+
 
 function setupMobileMenu() {
   const body = document.body;

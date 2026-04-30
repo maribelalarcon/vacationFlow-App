@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════
 
 const BASE = localStorage.getItem('vacationflow_api_url') || 'https://vacationflow-api-production.up.railway.app';
+const DEFAULT_AVATAR_URL = 'https://i.imgur.com/8Km9tLL.png';
 
 function getToken() {
   return sessionStorage.getItem('token') || localStorage.getItem('token');
@@ -63,11 +64,145 @@ async function cargarPerfilManager() {
     if (roleEl) roleEl.textContent = role;
     if (avatarEl) {
       const initials = `${(user.nombre || '')[0] || ''}${(user.apellidos || '')[0] || ''}`.toUpperCase() || 'MG';
-      avatarEl.textContent = initials;
+      const avatarUrl = resolverAvatarUsuario(user);
+      if (avatarUrl) {
+        avatarEl.innerHTML = `<img src="${avatarUrl}" alt="${nombre}">`;
+        const img = avatarEl.querySelector('img');
+        if (img) {
+          img.addEventListener('error', () => {
+            avatarEl.textContent = initials;
+          }, { once: true });
+        }
+      } else {
+        avatarEl.innerHTML = `<img src="${DEFAULT_AVATAR_URL}" alt="${nombre}">`;
+        const img = avatarEl.querySelector('img');
+        if (img) {
+          img.addEventListener('error', () => {
+            avatarEl.textContent = initials;
+          }, { once: true });
+        }
+      }
     }
   } catch (err) {
     console.warn('No se pudo cargar el perfil del manager:', err);
   }
+}
+
+async function cargarDestinatariosEmail() {
+  const select = document.getElementById('emailRecipient');
+  const preview = document.getElementById('emailRecipientsPreview');
+  if (!select || !preview) return;
+
+  try {
+    const res = await fetch(`${BASE}/api/users`, {
+      headers: { 'Authorization': `Bearer ${getToken()}` }
+    });
+
+    if (!res.ok) throw new Error('No se pudieron cargar empleados');
+
+    const users = await res.json();
+    const empleados = users
+      .filter((user) => String(user.rol || '').toLowerCase() !== 'admin')
+      .map((user) => ({
+        id: user.id,
+        nombre: `${user.nombre || ''} ${user.apellidos || ''}`.trim() || user.email || 'Empleado',
+        email: user.email || '',
+        avatar: resolverAvatarUsuario(user),
+        iniciales: getInitials(user.nombre, user.apellidos)
+      }));
+
+    select.innerHTML = '<option value="">Selecciona un empleado</option>';
+    empleados.forEach((empleado) => {
+      const option = document.createElement('option');
+      option.value = empleado.email;
+      option.textContent = empleado.email ? `${empleado.nombre} (${empleado.email})` : empleado.nombre;
+      option.dataset.nombre = empleado.nombre;
+      select.appendChild(option);
+    });
+
+    renderPreviewDestinatarios(empleados, preview);
+  } catch (error) {
+    console.warn('No se pudieron cargar destinatarios para email:', error);
+    select.innerHTML = '<option value="">No hay empleados disponibles</option>';
+    preview.innerHTML = '';
+  }
+}
+
+function renderPreviewDestinatarios(empleados, container) {
+  container.innerHTML = '';
+  empleados.slice(0, 4).forEach((empleado) => {
+    const chip = document.createElement('div');
+    chip.className = 'email-recipient-chip';
+    if (empleado.avatar) {
+      chip.innerHTML = `<img src="${empleado.avatar}" alt="${empleado.nombre}">`;
+      const img = chip.querySelector('img');
+      if (img) {
+        img.addEventListener('error', () => {
+          chip.textContent = empleado.iniciales;
+        }, { once: true });
+      }
+    } else {
+      chip.textContent = empleado.iniciales;
+    }
+    container.appendChild(chip);
+  });
+
+  if (empleados.length > 4) {
+    const extra = document.createElement('div');
+    extra.className = 'email-recipient-chip';
+    extra.textContent = `+${empleados.length - 4}`;
+    container.appendChild(extra);
+  }
+}
+
+function configurarFormularioEmail() {
+  const form = document.getElementById('emailForm');
+  const recipient = document.getElementById('emailRecipient');
+  const subject = document.getElementById('emailSubject');
+  const message = document.getElementById('emailMessage');
+
+  if (!form || !recipient || !subject || !message) return;
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+
+    const email = recipient.value.trim();
+    const asunto = subject.value.trim();
+    const cuerpo = message.value.trim();
+
+    if (!email || !asunto || !cuerpo) {
+      showToast('Completa destinatario, asunto y mensaje.');
+      return;
+    }
+
+    const mailto = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+    window.location.href = mailto;
+    showToast('Se abrió tu cliente de correo.');
+  });
+}
+
+function resolverAvatarUsuario(user) {
+  return user.avatar_url || obtenerAvatarGuardado(user) || user.avatar || DEFAULT_AVATAR_URL;
+}
+
+function obtenerAvatarGuardado(user) {
+  const clave = getAvatarStorageKey(user);
+  return localStorage.getItem(clave) || '';
+}
+
+function getAvatarStorageKey(user) {
+  const identificador = user?.id || user?.email || 'anon';
+  return `vacationflow_avatar_${identificador}`;
+}
+
+function getInitials(nombre, apellidos) {
+  const texto = `${nombre || ''} ${apellidos || ''}`.trim();
+  if (!texto) return '??';
+  return texto
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((parte) => parte[0]?.toUpperCase() || '')
+    .join('');
 }
 
 function renderSolicitudes(solicitudes) {
@@ -129,7 +264,10 @@ function openDetalle(id) {
 }
 
 function actualizarBadge(n) {
-  document.getElementById('acciones-badge').textContent = `${n} Acciones Requeridas`;
+  const badge = document.getElementById('acciones-badge');
+  if (badge) {
+    badge.textContent = `${n} Acciones Requeridas`;
+  }
 }
 
 function actualizarHistorico(pendientes) {
@@ -337,6 +475,8 @@ function setupMobileMenu() {
 
 // ─── INIT ─────────────────────────────────────────────────
 setupMobileMenu();
+cargarDestinatariosEmail();
+configurarFormularioEmail();
 cargarPerfilManager();
 cargarPendientes();
 cargarCalendario();

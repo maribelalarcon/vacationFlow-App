@@ -113,7 +113,15 @@ body {
 .page-sub { font-size: 13px; color: var(--text-sub); }
 
 .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
-.manager-profile { display: flex; align-items: center; gap: 12px; }
+.manager-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+.manager-profile:hover .manager-name {
+  text-decoration: underline;
+}
 .manager-info { text-align: right; }
 .manager-name { font-size: 14px; font-weight: 600; color: var(--text-main); }
 .manager-role { font-size: 12px; color: var(--text-sub); }
@@ -123,6 +131,13 @@ body {
   color: #fff; font-size: 13px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
   border: 2px solid var(--teal-light);
+  overflow: hidden;
+}
+.manager-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .acciones-badge {
@@ -234,6 +249,14 @@ body {
 .historico-title { font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px; }
 .historico-sub { font-size: 12px; color: var(--text-sub); line-height: 1.5; }
 
+.bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.9fr);
+  gap: 24px;
+  align-items: start;
+  margin-top: 24px;
+}
+
 /* ─── CALENDARIO ──────────────────────────────────────── */
 .card {
   background: var(--white);
@@ -297,6 +320,131 @@ body {
 .event-bar.annual  { background: rgba(46,139,120,0.15); color: var(--teal-main); border-left: 3px solid var(--teal-accent); }
 .event-bar.sick    { background: rgba(224,90,90,0.12);  color: #c0392b; border-left: 3px solid #e05a5a; }
 
+/* ─── EMAIL CARD ─────────────────────────────────────── */
+.email-card {
+  background: linear-gradient(180deg, #dff1ec 0%, #d8ece6 100%);
+  border: 1px solid rgba(42, 107, 95, 0.08);
+}
+
+.email-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.email-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #173a35;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.email-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-sub);
+}
+
+.email-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.email-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-sub);
+}
+
+.email-input {
+  width: 100%;
+  border: 1px solid rgba(42, 107, 95, 0.12);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.94);
+  color: var(--text-main);
+  font: inherit;
+  padding: 12px 14px;
+  outline: none;
+}
+
+.email-input:focus {
+  border-color: var(--teal-accent);
+  box-shadow: 0 0 0 3px rgba(58, 170, 147, 0.14);
+}
+
+.email-textarea {
+  resize: vertical;
+  min-height: 112px;
+}
+
+.email-footer {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.email-recipients {
+  display: flex;
+  align-items: center;
+}
+
+.email-recipient-chip {
+  width: 28px;
+  height: 28px;
+  margin-left: -8px;
+  border-radius: 50%;
+  border: 2px solid #dff1ec;
+  overflow: hidden;
+  background: var(--teal-dark);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.email-recipient-chip:first-child {
+  margin-left: 0;
+}
+
+.email-recipient-chip img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.email-send-btn {
+  border: 0;
+  border-radius: 10px;
+  background: var(--teal-dark);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  padding: 12px 18px;
+  cursor: pointer;
+  transition: transform .15s ease, background .2s ease;
+  white-space: nowrap;
+}
+
+.email-send-btn:hover {
+  background: var(--teal-main);
+  transform: translateY(-1px);
+}
+
 /* ─── TOAST ───────────────────────────────────────────── */
 .toast {
   position: fixed; bottom: 32px; right: 32px;
@@ -314,6 +462,7 @@ body {
 @media (max-width: 960px) {
   .solicitudes-section { grid-template-columns: 1fr; }
   .page-header { flex-direction: column; }
+  .bottom-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
   .main { padding: 24px 16px; }
@@ -334,6 +483,14 @@ body {
 @media (max-width: 960px) {
   body.menu-open {
     overflow: hidden;
+  }
+
+  .manager-info {
+    display: none;
+  }
+
+  .manager-avatar {
+    display: none;
   }
 
   .sidebar {
@@ -420,6 +577,15 @@ body {
 }
 
 @media (max-width: 640px) {
+  .email-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .email-send-btn {
+    width: 100%;
+  }
+
   .mobile-menu-toggle {
     top: 14px;
     right: 14px;
