@@ -12,11 +12,16 @@
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="logo-icon"><img src="/public/assets/logoVF.png" alt="VacationFlow logo"></div>
-      <div class="logo-text">
-        VacationFlow
-      </div>
+    <div class="sidebar-mobile-top">
+      <a href="/src/pages/usuario/perfil_usuario.html" class="sidebar-logo">
+        <div class="logo-icon"><img src="/public/assets/logoVF.png" alt="VacationFlow logo"></div>
+        <div class="logo-text">
+          VacationFlow
+        </div>
+      </a>
+      <button type="button" class="sidebar-close" id="sidebarCloseBtn" aria-label="Cerrar menú">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
     </div>
     <nav class="sidebar-nav">
       <a href="/src/pages/usuario/perfil_usuario.html" class="nav-item">
@@ -59,6 +64,13 @@
       </a>
     </div>
   </aside>
+  <a href="/src/pages/usuario/perfil_usuario.html" class="mobile-brand" aria-label="Ir al perfil">
+    <div class="logo-icon"><img src="/public/assets/logoVF.png" alt="VacationFlow logo"></div>
+  </a>
+  <button type="button" class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Abrir menú" aria-expanded="false">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+  </button>
+  <div class="menu-overlay" id="menuOverlay" hidden></div>
 
   <!-- MAIN -->
   <main class="main">
@@ -69,7 +81,6 @@
         <h1 class="page-title">Equipo</h1>
         <p class="page-sub" id="teamPageSubtitle">Consulta el directorio completo del equipo.</p>
       </div>
-      <a href="/src/pages/solicitud/solicitar.html" class="btn-submit">＋ Nueva Solicitud</a>
     </header>
 
     <div class="content-grid">

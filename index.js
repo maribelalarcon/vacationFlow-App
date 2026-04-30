@@ -15,8 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const rememberChk  = document.getElementById('check');
 
     // ─── Si ya hay sesión iniciada, redirigir según rol ────
-    const tokenGuardado = localStorage.getItem('token') || sessionStorage.getItem('token');
-    const rolGuardado   = localStorage.getItem('rol')   || sessionStorage.getItem('rol');
+    const tokenGuardado = sessionStorage.getItem('token') || localStorage.getItem('token');
+    const rolGuardado   = sessionStorage.getItem('rol')   || localStorage.getItem('rol');
 
     if (tokenGuardado) {
         if (rolGuardado === 'admin') {
@@ -52,6 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (response.ok) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('rol');
+                localStorage.removeItem('userId');
+                sessionStorage.removeItem('token');
+                sessionStorage.removeItem('rol');
+                sessionStorage.removeItem('userId');
+
                 // ✅ Login correcto: guardamos token, rol y userId
                 const storage = rememberChk.checked ? localStorage : sessionStorage;
                 storage.setItem('token',  data.token);

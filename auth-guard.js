@@ -16,8 +16,8 @@
     }
 
     // ─── 2. Leer sesión de cualquier storage ──────────────
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    const rol   = (localStorage.getItem('rol')  || sessionStorage.getItem('rol') || '').trim().toLowerCase();
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    const rol   = (sessionStorage.getItem('rol')  || localStorage.getItem('rol') || '').trim().toLowerCase();
 
     // ─── 3. Leer rol exigido por la página ────────────────
     const script = document.currentScript ||
@@ -70,7 +70,7 @@
     window.VFAuth = {
         token,
         rol,
-        userId: localStorage.getItem('userId') || sessionStorage.getItem('userId'),
+        userId: sessionStorage.getItem('userId') || localStorage.getItem('userId'),
         isAdmin: () => rol === 'admin',
 
         logout() {

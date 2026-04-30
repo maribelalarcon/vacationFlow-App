@@ -11,7 +11,7 @@
 const API_URL = localStorage.getItem('vacationflow_api_url') || 'https://vacationflow-api-production.up.railway.app';
 
 // ─── PROTECCIÓN DE RUTA ───────────────────────────────
-const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+const token = sessionStorage.getItem('token') || localStorage.getItem('token');
 if (!token) window.location.href = '/index.html';
 
 // ─── ID DE LA SOLICITUD DE LA URL ─────────────────────
@@ -27,6 +27,7 @@ let solicitudActual = null;
 //   AL CARGAR
 // ═══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
+  setupMobileMenu();
 
   await cargarDetalle();
   await cargarSidebarDias();
@@ -282,4 +283,38 @@ function cerrarSesion() {
   sessionStorage.removeItem('rol');
   sessionStorage.removeItem('userId');
   window.location.href = '/index.html';
+}
+
+function setupMobileMenu() {
+  const body = document.body;
+  const toggleBtn = document.getElementById('mobileMenuToggle');
+  const closeBtn = document.getElementById('sidebarCloseBtn');
+  const overlay = document.getElementById('menuOverlay');
+  const navLinks = document.querySelectorAll('.sidebar .nav-item, .sidebar .nav-bottom-item, .sidebar .sidebar-logo');
+
+  if (!toggleBtn || !closeBtn || !overlay) return;
+
+  const setOpen = (open) => {
+    body.classList.toggle('menu-open', open);
+    toggleBtn.setAttribute('aria-expanded', String(open));
+    overlay.hidden = !open;
+  };
+
+  toggleBtn.addEventListener('click', () => setOpen(!body.classList.contains('menu-open')));
+  closeBtn.addEventListener('click', () => setOpen(false));
+  overlay.addEventListener('click', () => setOpen(false));
+
+  navLinks.forEach((link) => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 960) setOpen(false);
+    });
+  });
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setOpen(false);
+  });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 960) setOpen(false);
+  });
 }

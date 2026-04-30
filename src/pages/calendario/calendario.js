@@ -1,7 +1,7 @@
 const API_URL = localStorage.getItem('vacationflow_api_url') || 'https://vacationflow-api-production.up.railway.app';
 
-const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-const rol = (localStorage.getItem('rol') || sessionStorage.getItem('rol') || '').trim().toLowerCase();
+const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+const rol = (sessionStorage.getItem('rol') || localStorage.getItem('rol') || '').trim().toLowerCase();
 
 if (!token) {
   window.location.href = '/index.html';
@@ -22,6 +22,7 @@ let resumen = { ausencias_en_mes: 0, dias_propios_en_mes: 0 };
 let ausenciasMes = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
+  setupMobileMenu();
   configurarVistaSegunRol();
   await cargarCalendario();
   renderCalendar();
@@ -353,4 +354,38 @@ function getInitials(nombre, apellidos) {
     .slice(0, 2)
     .map((parte) => parte[0]?.toUpperCase() || '')
     .join('');
+}
+
+function setupMobileMenu() {
+  const body = document.body;
+  const toggleBtn = document.getElementById('mobileMenuToggle');
+  const closeBtn = document.getElementById('sidebarCloseBtn');
+  const overlay = document.getElementById('menuOverlay');
+  const navLinks = document.querySelectorAll('.sidebar .nav-item, .sidebar .nav-bottom-item, .sidebar .btn-new-request, .sidebar .sidebar-logo');
+
+  if (!toggleBtn || !closeBtn || !overlay) return;
+
+  const setOpen = (open) => {
+    body.classList.toggle('menu-open', open);
+    toggleBtn.setAttribute('aria-expanded', String(open));
+    overlay.hidden = !open;
+  };
+
+  toggleBtn.addEventListener('click', () => setOpen(!body.classList.contains('menu-open')));
+  closeBtn.addEventListener('click', () => setOpen(false));
+  overlay.addEventListener('click', () => setOpen(false));
+
+  navLinks.forEach((link) => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 960) setOpen(false);
+    });
+  });
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setOpen(false);
+  });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 960) setOpen(false);
+  });
 }
