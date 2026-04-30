@@ -402,25 +402,6 @@ body {
 }
 
 /* ─── BOTÓN ───────────────────────────────────────────── */
-.btn-submit {
-  padding: 12px 28px;
-  background: var(--teal-dark);
-  border: none;
-  border-radius: 8px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  transition: background .2s, transform .15s;
-}
-.btn-submit:hover  { background: var(--teal-main); transform: translateY(-1px); }
-.btn-submit:active { transform: translateY(0); }
-
 /* ─── PANEL DERECHO ───────────────────────────────────── */
 .right-panel { display: flex; flex-direction: column; gap: 16px; }
 
@@ -440,6 +421,32 @@ body {
 
 .profile-edit-form[hidden] {
   display: none !important;
+}
+
+.profile-success-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #edf8f3;
+  border: 1px solid rgba(31, 138, 88, 0.18);
+  color: #1e6e49;
+}
+
+.profile-success-card[hidden] {
+  display: none !important;
+}
+
+.profile-success-card strong {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.profile-success-card span {
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .profile-edit-header {
@@ -568,12 +575,20 @@ body {
 
 /* ─── RESPONSIVE ──────────────────────────────────────── */
 @media (max-width: 900px) {
-  .content-grid { grid-template-columns: 1fr; }
-  .right-panel  { display: none; }
+  .content-grid { display: flex; flex-direction: column; gap: 16px; }
+  .left-column { order: 1; }
+  .right-panel  { display: contents; }
+  .profile-edit-card { order: 0; }
+  .banner-card { order: 2; }
+  .profile-edit-card,
+  .banner-card { width: 100%; }
 }
 @media (max-width: 640px) {
   .main        { padding: 24px 18px; }
   .tipo-grid   { grid-template-columns: 1fr; }
   .profile-header-top { flex-direction: column; align-items: flex-start; gap: 16px; }
   .progress-header    { flex-direction: column; gap: 8px; }
+  .right-panel { gap: 14px; }
+  .profile-edit-card { padding: 16px; }
+  .banner-card { min-height: 138px; }
 }

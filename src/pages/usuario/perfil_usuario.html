@@ -82,7 +82,6 @@
           </div>
         </div>
       </div>
-      <a href="/src/pages/solicitud/solicitar.html" class="btn-submit">＋ Nueva Solicitud</a>
     </header>
 
     <div class="content-grid">
@@ -99,15 +98,15 @@
           </div>
           <div class="stat-profile-card">
             <div class="card-header-icon">⛱</div>
-            <p class="disp-label">Consumidos</p>
+            <p class="disp-label" id="statConsumidosLabel">Consumidos</p>
             <div class="stat-number" id="statConsumidos">0</div>
-            <p class="tipo-desc">Días Usados</p>
+            <p class="tipo-desc" id="statConsumidosDesc">Días Usados</p>
           </div>
           <div class="stat-profile-card" style="background: var(--teal-dark);">
             <div class="card-header-icon" style="background: rgba(255,255,255,0.1); color: white;">📋</div>
-            <p class="disp-label" style="color: var(--teal-light);">Restantes</p>
+            <p class="disp-label" id="statRestantesLabel" style="color: var(--teal-light);">Restantes</p>
             <div class="stat-number" id="statRestantes" style="color: white;">0</div>
-            <p class="tipo-desc" style="color: var(--teal-pale);">Disponibles</p>
+            <p class="tipo-desc" id="statRestantesDesc" style="color: var(--teal-pale);">Disponibles</p>
           </div>
         </div>
 
@@ -157,6 +156,10 @@
             <button type="button" class="profile-toggle-btn" id="profileToggleBtn" aria-expanded="false">
               Modificar perfil
             </button>
+          </div>
+          <div class="profile-success-card" id="profileSuccessCard" hidden>
+            <strong>Perfil modificado</strong>
+            <span>Tus cambios se guardaron correctamente.</span>
           </div>
           <form id="profileEditForm" class="profile-edit-form" hidden>
             <div class="profile-field">

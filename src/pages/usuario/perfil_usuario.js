@@ -84,13 +84,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ═══════════════════════════════════════════════════════
   //   3. RENDERIZAR STATS DE DISPONIBILIDAD
   // ═══════════════════════════════════════════════════════
-  const cuota      = disponibilidad.dias_totales || 0;
-  const consumidos = disponibilidad.dias_consumidos || 0;
-  const restantes  = disponibilidad.dias_disponibles || 0;
+  const resumenAnual = calcularResumenAnual(solicitudes, disponibilidad);
+  const cuota      = resumenAnual.cuota;
+  const consumidos = resumenAnual.consumidos;
+  const restantes  = resumenAnual.restantes;
+  const excedidos  = resumenAnual.excedidos;
 
   document.getElementById('statCuota').textContent      = cuota;
   document.getElementById('statConsumidos').textContent = consumidos;
-  document.getElementById('statRestantes').textContent  = restantes;
+  document.getElementById('statRestantes').textContent  = excedidos > 0 ? excedidos : restantes;
+  document.getElementById('statConsumidosLabel').textContent = 'Consumidos';
+  document.getElementById('statConsumidosDesc').textContent = 'Días Usados';
+  document.getElementById('statRestantesLabel').textContent = excedidos > 0 ? 'Excedidos' : 'Restantes';
+  document.getElementById('statRestantesDesc').textContent = excedidos > 0 ? 'Sobre la cuota' : 'Disponibles';
 
   document.getElementById('sidebarDays').textContent = restantes;
   document.getElementById('sidebarUnit').textContent = restantes === 1 ? 'día' : 'días';
@@ -99,15 +105,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   //   4. BARRA DE PROGRESO ANIMADA
   // ═══════════════════════════════════════════════════════
   const porcentaje = cuota > 0 ? Math.round((consumidos / cuota) * 100) : 0;
+  const porcentajeVisual = Math.min(porcentaje, 100);
   const barFill    = document.getElementById('progressBarFill');
   const percentEl  = document.getElementById('progressPercent');
   const subEl      = document.getElementById('progressSub');
 
-  subEl.textContent     = `${consumidos} de ${cuota} días usados`;
+  subEl.textContent     = excedidos > 0
+    ? `${consumidos} de ${cuota} días usados · ${excedidos} por encima del límite`
+    : `${consumidos} de ${cuota} días usados`;
   percentEl.textContent = `${porcentaje}%`;
 
   setTimeout(() => {
-    barFill.style.width = `${porcentaje}%`;
+    barFill.style.width = `${porcentajeVisual}%`;
   }, 100);
 
   if (porcentaje >= 75) {
@@ -191,8 +200,10 @@ function configurarFormularioPerfil(usuario, avatarEl) {
   const saveBtn = document.getElementById('profileSaveBtn');
   const messageEl = document.getElementById('profileFormMessage');
   const toggleBtn = document.getElementById('profileToggleBtn');
+  const successCard = document.getElementById('profileSuccessCard');
+  let successTimer = null;
 
-  if (!form || !nombreInput || !apellidoInput || !emailInput || !saveBtn || !messageEl || !toggleBtn) {
+  if (!form || !nombreInput || !apellidoInput || !emailInput || !saveBtn || !messageEl || !toggleBtn || !successCard) {
     return;
   }
 
@@ -205,6 +216,10 @@ function configurarFormularioPerfil(usuario, avatarEl) {
     form.hidden = abierto;
     toggleBtn.setAttribute('aria-expanded', String(!abierto));
     toggleBtn.textContent = abierto ? 'Modificar perfil' : 'Cerrar';
+    if (!abierto) {
+      ocultarExitoPerfil(successCard, successTimer);
+      successTimer = null;
+    }
 
     if (!abierto) {
       nombreInput.focus();
@@ -241,7 +256,11 @@ function configurarFormularioPerfil(usuario, avatarEl) {
       Object.assign(usuario, updatedUser);
       sincronizarVistaPerfil(usuario, avatarEl);
       emailInput.value = usuario.email || emailNormalizado;
-      mostrarMensajePerfil(messageEl, 'Perfil actualizado correctamente.', 'success');
+      form.hidden = true;
+      toggleBtn.setAttribute('aria-expanded', 'false');
+      toggleBtn.textContent = 'Modificar perfil';
+      limpiarMensajePerfil(messageEl);
+      successTimer = mostrarExitoPerfil(successCard, successTimer);
     } catch (error) {
       console.error('Error al actualizar perfil:', error);
       mostrarMensajePerfil(messageEl, error.message || 'No se pudo actualizar el perfil.', 'error');
@@ -277,6 +296,23 @@ function mostrarMensajePerfil(element, message, type) {
 function limpiarMensajePerfil(element) {
   element.textContent = '';
   element.classList.remove('is-success', 'is-error');
+}
+
+function mostrarExitoPerfil(card, timerId) {
+  if (timerId) {
+    clearTimeout(timerId);
+  }
+  card.hidden = false;
+  return window.setTimeout(() => {
+    card.hidden = true;
+  }, 2600);
+}
+
+function ocultarExitoPerfil(card, timerId) {
+  if (timerId) {
+    clearTimeout(timerId);
+  }
+  card.hidden = true;
 }
 
 function formatearFechaCorta(iso) {
@@ -404,8 +440,42 @@ function normalizarSolicitudes(rows) {
       tipo: tipo.label,
       icono: tipo.icono,
       estado: capitalizarEstado(row.estado),
+      estadoRaw: String(row.estado || '').toLowerCase(),
+      tipoRaw: String(row.tipo || '').toLowerCase(),
     };
   });
+}
+
+function calcularResumenAnual(solicitudes, disponibilidad) {
+  const cuota = Number(disponibilidad?.dias_totales) || 0;
+  const añoActual = new Date().getFullYear();
+  const inicioAño = `${añoActual}-01-01`;
+  const finAño = `${añoActual}-12-31`;
+
+  const consumidos = (solicitudes || []).reduce((total, solicitud) => {
+    if (solicitud.tipoRaw !== 'vacaciones' || solicitud.estadoRaw !== 'aprobado') {
+      return total;
+    }
+
+    return total + calcularSolapamientoDias(solicitud.desde, solicitud.hasta, inicioAño, finAño);
+  }, 0);
+
+  return {
+    cuota,
+    consumidos,
+    restantes: Math.max(cuota - consumidos, 0),
+    excedidos: Math.max(consumidos - cuota, 0),
+  };
+}
+
+function calcularSolapamientoDias(desde, hasta, rangoInicio, rangoFin) {
+  if (!desde || !hasta) return 0;
+
+  const inicio = desde > rangoInicio ? desde : rangoInicio;
+  const fin = hasta < rangoFin ? hasta : rangoFin;
+
+  if (inicio > fin) return 0;
+  return calcularDias(inicio, fin);
 }
 
 function soloFecha(value) {
