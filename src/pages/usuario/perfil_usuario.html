@@ -13,10 +13,9 @@
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-icon">🌿</div>
+      <div class="logo-icon"><img src="/public/assets/logoVF.png" alt="VacationFlow logo"></div>
       <div class="logo-text">
         VacationFlow
-        <span>The Digital Sanctuary</span>
       </div>
     </div>
     <nav class="sidebar-nav">
@@ -69,6 +68,10 @@
       <div class="user-main-info">
         <div class="avatar-container">
           <img src="https://i.imgur.com/8Km9tLL.png" alt="Avatar" class="profile-avatar" id="userAvatar">
+          <label for="avatarInput" class="avatar-edit-btn" title="Cambiar foto de perfil">
+            <span>Cambiar</span>
+          </label>
+          <input type="file" id="avatarInput" class="avatar-input" accept="image/*">
           <div class="avatar-check">✓</div>
         </div>
         <div>
@@ -149,11 +152,28 @@
 
       <!-- PANEL DERECHO -->
       <div class="right-panel">
-        <div class="ayuda-card">
-          <div class="ayuda-title">👥 Presencia del Equipo</div>
-          <div class="team-list" id="teamPresence">
-            <!-- Generado por JS -->
+        <div class="profile-edit-card">
+          <div class="profile-edit-header">
+            <button type="button" class="profile-toggle-btn" id="profileToggleBtn" aria-expanded="false">
+              Modificar perfil
+            </button>
           </div>
+          <form id="profileEditForm" class="profile-edit-form" hidden>
+            <div class="profile-field">
+              <label for="editNombre" class="form-label">Nombre</label>
+              <input type="text" id="editNombre" class="profile-input" placeholder="Tu nombre" required>
+            </div>
+            <div class="profile-field">
+              <label for="editApellido" class="form-label">Apellido</label>
+              <input type="text" id="editApellido" class="profile-input" placeholder="Tu apellido" required>
+            </div>
+            <div class="profile-field">
+              <label for="editEmail" class="form-label">Email</label>
+              <input type="email" id="editEmail" class="profile-input" placeholder="tu@email.com" required>
+            </div>
+            <button type="submit" class="profile-save-btn" id="profileSaveBtn">Guardar cambios</button>
+            <p class="profile-form-message" id="profileFormMessage" aria-live="polite"></p>
+          </form>
         </div>
 
         <div class="banner-card">

@@ -53,10 +53,18 @@ body {
 }
 .logo-icon {
   width: 36px; height: 36px;
-  background: var(--teal-accent);
+  background: #fff;
   border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
   font-size: 18px;
+}
+.logo-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  padding: 5px;
+  box-sizing: border-box;
 }
 .logo-text { color: #fff; font-weight: 700; font-size: 14px; line-height: 1.2; }
 .logo-text span { display: block; font-weight: 300; font-size: 10px; color: var(--teal-light); letter-spacing: 1.5px; text-transform: uppercase; }
@@ -133,6 +141,13 @@ body {
   font-size: 42px; font-weight: 700;
   color: var(--text-main); line-height: 1;
   font-family: 'DM Serif Display', serif;
+}
+.page-subtitle {
+  margin-top: 10px;
+  max-width: 620px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-sub);
 }
 
 .month-nav {
@@ -228,6 +243,11 @@ body {
 .event-bar.annual { background: rgba(46,139,120,0.15); color: var(--teal-main); border-left: 3px solid var(--annual); }
 .event-bar.sick    { background: rgba(224,90,90,0.12);  color: #c0392b;          border-left: 3px solid var(--sick); }
 .event-bar.holiday { background: rgba(58,170,147,0.15); color: var(--teal-accent); border-left: 3px solid var(--holiday); }
+.event-bar.own-event {
+  background: var(--teal-accent);
+  color: #fff;
+  border-left-color: var(--teal-dark);
+}
 
 /* ─── LEYENDA ───*/
 .legend {

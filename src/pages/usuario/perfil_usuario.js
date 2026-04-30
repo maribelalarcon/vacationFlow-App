@@ -7,10 +7,10 @@
 //   Historial del empleado:
 //     · GET /api/users/history   → solicitudes propias
 //
-//   Presencia del equipo sigue pendiente de endpoints específicos.
 // ═══════════════════════════════════════════════════════
 
 const API_URL = localStorage.getItem('vacationflow_api_url') || 'https://vacationflow-api-production.up.railway.app';
+const DEFAULT_AVATAR_URL = 'https://i.imgur.com/8Km9tLL.png';
 
 const token = localStorage.getItem('token') || sessionStorage.getItem('token');
 
@@ -21,9 +21,6 @@ if (!token) {
 document.addEventListener('DOMContentLoaded', async () => {
 
   let solicitudes = [];
-  const presenciaEquipo = [];
-  const historyEmpty = document.getElementById('historyEmpty');
-
   // ═══════════════════════════════════════════════════════
   //   1. CARGAR DATOS DEL USUARIO DESDE EL BACK
   // ═══════════════════════════════════════════════════════
@@ -75,15 +72,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ═══════════════════════════════════════════════════════
   //   2. RENDERIZAR DATOS DEL USUARIO EN LA CABECERA
   // ═══════════════════════════════════════════════════════
-  const nombreCompleto = `${usuario.nombre} ${usuario.apellidos || ''}`.trim();
-
-  document.getElementById('userName').textContent = nombreCompleto;
-  document.getElementById('userRole').textContent = usuario.rol || 'Empleado';
-  document.getElementById('userJoinDate').textContent = `📅 ${usuario.email}`;
-  document.title = `VacationFlow - ${nombreCompleto}`;
-
   const avatarEl = document.getElementById('userAvatar');
-  avatarEl.alt = nombreCompleto;
+  sincronizarVistaPerfil(usuario, avatarEl);
+  avatarEl.addEventListener('error', () => {
+    avatarEl.src = DEFAULT_AVATAR_URL;
+  });
+
+  configurarCambioAvatar(usuario, avatarEl);
+  configurarFormularioPerfil(usuario, avatarEl);
 
   // ═══════════════════════════════════════════════════════
   //   3. RENDERIZAR STATS DE DISPONIBILIDAD
@@ -125,12 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderHistorial(solicitudes);
 
   // ═══════════════════════════════════════════════════════
-  //   6. RENDERIZAR PRESENCIA DEL EQUIPO
-  // ═══════════════════════════════════════════════════════
-  renderPresenciaEquipo(presenciaEquipo);
-
-  // ═══════════════════════════════════════════════════════
-  //   7. CONFIGURAR CIERRE DE SESIÓN
+  //   6. CONFIGURAR CIERRE DE SESIÓN
   // ═══════════════════════════════════════════════════════
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
@@ -140,7 +131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  console.log(`🌿 VacationFlow: Panel de ${nombreCompleto} cargado correctamente.`);
+  console.log(`🌿 VacationFlow: Panel de ${getNombreCompleto(usuario)} cargado correctamente.`);
   console.log(`   Días restantes: ${restantes}/${cuota}`);
 });
 
@@ -182,23 +173,6 @@ function renderHistorial(solicitudes) {
   }).join('');
 }
 
-function renderPresenciaEquipo(lista) {
-  const cont = document.getElementById('teamPresence');
-  if (!lista || lista.length === 0) {
-    cont.innerHTML = '<p class="ayuda-desc">No hay datos de presencia del equipo disponibles.</p>';
-    return;
-  }
-  cont.innerHTML = lista.map(p => `
-    <div class="ayuda-item">
-      <div class="ayuda-icon">${p.nombre.charAt(0).toUpperCase()}</div>
-      <div>
-        <p class="ayuda-name">${p.nombre}</p>
-        <p class="ayuda-desc">${p.motivo}</p>
-      </div>
-    </div>
-  `).join('');
-}
-
 function cerrarSesion() {
   localStorage.removeItem('token');
   localStorage.removeItem('rol');
@@ -207,6 +181,102 @@ function cerrarSesion() {
   sessionStorage.removeItem('rol');
   sessionStorage.removeItem('userId');
   window.location.href = '/index.html';
+}
+
+function configurarFormularioPerfil(usuario, avatarEl) {
+  const form = document.getElementById('profileEditForm');
+  const nombreInput = document.getElementById('editNombre');
+  const apellidoInput = document.getElementById('editApellido');
+  const emailInput = document.getElementById('editEmail');
+  const saveBtn = document.getElementById('profileSaveBtn');
+  const messageEl = document.getElementById('profileFormMessage');
+  const toggleBtn = document.getElementById('profileToggleBtn');
+
+  if (!form || !nombreInput || !apellidoInput || !emailInput || !saveBtn || !messageEl || !toggleBtn) {
+    return;
+  }
+
+  nombreInput.value = usuario.nombre || '';
+  apellidoInput.value = usuario.apellidos || '';
+  emailInput.value = usuario.email || '';
+
+  toggleBtn.addEventListener('click', () => {
+    const abierto = !form.hidden;
+    form.hidden = abierto;
+    toggleBtn.setAttribute('aria-expanded', String(!abierto));
+    toggleBtn.textContent = abierto ? 'Modificar perfil' : 'Cerrar';
+
+    if (!abierto) {
+      nombreInput.focus();
+    } else {
+      limpiarMensajePerfil(messageEl);
+    }
+  });
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    limpiarMensajePerfil(messageEl);
+
+    const nombre = nombreInput.value.trim();
+    const apellido = apellidoInput.value.trim();
+    const email = emailInput.value.trim();
+
+    if (!nombre || !apellido || !email) {
+      mostrarMensajePerfil(messageEl, 'Completa nombre, apellido y email.', 'error');
+      return;
+    }
+
+    const emailNormalizado = email.toLowerCase();
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Guardando...';
+
+    try {
+      const updatedUser = await persistirPerfil({
+        nombre,
+        apellido,
+        email: emailNormalizado
+      });
+
+      Object.assign(usuario, updatedUser);
+      sincronizarVistaPerfil(usuario, avatarEl);
+      emailInput.value = usuario.email || emailNormalizado;
+      mostrarMensajePerfil(messageEl, 'Perfil actualizado correctamente.', 'success');
+    } catch (error) {
+      console.error('Error al actualizar perfil:', error);
+      mostrarMensajePerfil(messageEl, error.message || 'No se pudo actualizar el perfil.', 'error');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Guardar cambios';
+    }
+  });
+}
+
+function sincronizarVistaPerfil(usuario, avatarEl) {
+  const nombreCompleto = getNombreCompleto(usuario);
+
+  document.getElementById('userName').textContent = nombreCompleto;
+  document.getElementById('userRole').textContent = usuario.rol || 'Empleado';
+  document.getElementById('userJoinDate').textContent = `📅 ${usuario.email}`;
+  document.title = `VacationFlow - ${nombreCompleto}`;
+
+  avatarEl.alt = nombreCompleto;
+  avatarEl.src = usuario.avatar_url || obtenerAvatarGuardado(usuario) || DEFAULT_AVATAR_URL;
+}
+
+function getNombreCompleto(usuario) {
+  return `${usuario.nombre || ''} ${usuario.apellidos || ''}`.trim();
+}
+
+function mostrarMensajePerfil(element, message, type) {
+  element.textContent = message;
+  element.classList.remove('is-success', 'is-error');
+  element.classList.add(type === 'success' ? 'is-success' : 'is-error');
+}
+
+function limpiarMensajePerfil(element) {
+  element.textContent = '';
+  element.classList.remove('is-success', 'is-error');
 }
 
 function formatearFechaCorta(iso) {
@@ -218,6 +288,101 @@ function formatearFechaCorta(iso) {
 function formatearRango(desde, hasta) {
   const añoHasta = hasta.split('-')[0];
   return `${formatearFechaCorta(desde)} – ${formatearFechaCorta(hasta)}, ${añoHasta}`;
+}
+
+function configurarCambioAvatar(usuario, avatarEl) {
+  const avatarInput = document.getElementById('avatarInput');
+  if (!avatarInput) return;
+
+  avatarInput.addEventListener('change', async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Selecciona una imagen válida para la foto de perfil.');
+      avatarInput.value = '';
+      return;
+    }
+
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert('La imagen es demasiado grande. Elige un archivo de hasta 2 MB.');
+      avatarInput.value = '';
+      return;
+    }
+
+    try {
+      const dataUrl = await leerArchivoComoDataUrl(file);
+      const avatarPersistido = await persistirAvatar(usuario, dataUrl);
+      guardarAvatar(usuario, avatarPersistido);
+      usuario.avatar_url = avatarPersistido;
+      avatarEl.src = avatarPersistido;
+    } catch (error) {
+      console.error('Error al cargar avatar:', error);
+      alert('No se pudo actualizar la foto de perfil.');
+    } finally {
+      avatarInput.value = '';
+    }
+  });
+}
+
+function leerArchivoComoDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('No se pudo leer el archivo.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function obtenerAvatarGuardado(usuario) {
+  const clave = getAvatarStorageKey(usuario);
+  return localStorage.getItem(clave) || '';
+}
+
+function guardarAvatar(usuario, dataUrl) {
+  const clave = getAvatarStorageKey(usuario);
+  localStorage.setItem(clave, dataUrl);
+}
+
+function getAvatarStorageKey(usuario) {
+  const identificador = usuario?.id || usuario?.email || 'anon';
+  return `vacationflow_avatar_${identificador}`;
+}
+
+async function persistirAvatar(usuario, dataUrl) {
+  try {
+    const updatedUser = await persistirPerfil({ avatar_url: dataUrl });
+    Object.assign(usuario, updatedUser);
+    return updatedUser?.avatar_url || dataUrl;
+  } catch (error) {
+    console.warn('No se pudo persistir el avatar en backend, se usará almacenamiento local.', error);
+    return dataUrl;
+  }
+}
+
+async function persistirPerfil(payload) {
+  const res = await fetch(`${API_URL}/api/users/profile`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  let data = null;
+  try {
+    data = await res.json();
+  } catch (error) {
+    data = null;
+  }
+
+  if (!res.ok) {
+    throw new Error(data?.message || `HTTP ${res.status}`);
+  }
+
+  return data?.user || data || {};
 }
 
 function normalizarSolicitudes(rows) {

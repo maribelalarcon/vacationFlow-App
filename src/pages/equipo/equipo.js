@@ -12,6 +12,7 @@ const API_URL = localStorage.getItem('vacationflow_api_url') || 'https://vacatio
 
 // ─── PROTECCIÓN DE RUTA ───────────────────────────────
 const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+const rol = (localStorage.getItem('rol') || sessionStorage.getItem('rol') || '').trim().toLowerCase();
 if (!token) {
   window.location.href = '/index.html';
 }
@@ -30,11 +31,16 @@ const activeAbsences = document.getElementById('activeAbsences');
 const statTotal      = document.getElementById('statTotal');
 const statAprobadas  = document.getElementById('statAprobadas');
 const statPendientes = document.getElementById('statPendientes');
+const teamPageSubtitle = document.getElementById('teamPageSubtitle');
+const teamBannerTitle = document.getElementById('teamBannerTitle');
+const teamBannerSub = document.getElementById('teamBannerSub');
+const teamBannerCta = document.getElementById('teamBannerCta');
 
 // ═══════════════════════════════════════════════════════
 //   AL CARGAR LA PÁGINA
 // ═══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
+  configurarVistaSegunRol();
 
   // 1) Cargar usuarios del back
   await cargarUsuarios();
@@ -111,7 +117,6 @@ async function cargarUsuarios() {
     }
 
     if (res.status === 403) {
-      window.location.href = '/src/pages/usuario/perfil_usuario.html';
       return;
     }
 
@@ -186,8 +191,9 @@ function valorOrden(u, campo) {
 // ═══════════════════════════════════════════════════════
 function crearFila(u) {
   const tr = document.createElement('tr');
-  tr.style.cursor = 'pointer';
-  tr.title = `Ver perfil de ${u.nombre}`;
+  const puedeVerDetalle = rol === 'admin';
+  tr.style.cursor = puedeVerDetalle ? 'pointer' : 'default';
+  tr.title = puedeVerDetalle ? `Ver perfil de ${u.nombre}` : `${u.nombre}`;
   const inicial = u.nombre.charAt(0).toUpperCase();
 
   tr.innerHTML = `
@@ -207,9 +213,11 @@ function crearFila(u) {
   `;
 
   // Al hacer clic en la fila → ir al perfil del empleado
-  tr.addEventListener('click', () => {
-    window.location.href = `/src/pages/jefe/veruser_jefe.html#id=${u.id}`;
-  });
+  if (puedeVerDetalle) {
+    tr.addEventListener('click', () => {
+      window.location.href = `/src/pages/jefe/veruser_jefe.html#id=${u.id}`;
+    });
+  }
 
   return tr;
 }
@@ -226,6 +234,23 @@ function actualizarStats() {
 function actualizarAusencias() {
   activeAbsences.innerHTML =
     '<p class="ayuda-desc" style="padding:8px 0;">No hay ausencias activas.</p>';
+}
+
+function configurarVistaSegunRol() {
+  if (rol === 'admin') {
+    teamPageSubtitle.textContent = 'Consulta el directorio del equipo y accede al detalle de cada empleado';
+    teamBannerTitle.textContent = 'Un equipo descansado es un equipo productivo.';
+    teamBannerSub.textContent = 'Accede a las solicitudes pendientes desde el panel de gestión.';
+    teamBannerCta.textContent = 'REVISAR AHORA →';
+    teamBannerCta.href = '/src/pages/jefe/solicitud/solicitudes_jefe.html';
+    return;
+  }
+
+  teamPageSubtitle.textContent = 'Consulta el directorio completo del equipo y revisa quienes forman parte de la empresa.';
+  teamBannerTitle.textContent = 'Conoce a tu equipo.';
+  teamBannerSub.textContent = 'Desde aqui puedes revisar rapidamente quienes integran el equipo completo.';
+  teamBannerCta.textContent = 'VER CALENDARIO →';
+  teamBannerCta.href = '/src/pages/calendario/calendario.html';
 }
 
 // ═══════════════════════════════════════════════════════

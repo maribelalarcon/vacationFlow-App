@@ -6,17 +6,16 @@
   <title>VacationFlow - Calendario</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="calendario.css">
-  <script src="/auth-guard.js" data-required-role="admin"></script>
+  <script src="/auth-guard.js" data-required-role="any"></script>
 </head>
 <body>
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-icon">🌿</div>
+      <div class="logo-icon"><img src="/public/assets/logoVF.png" alt="VacationFlow logo"></div>
       <div class="logo-text">
         VacationFlow
-        <span>The Digital Sanctuary</span>
       </div>
     </div>
 
@@ -68,8 +67,9 @@
     <!-- HEADER -->
     <header class="page-header">
       <div>
-        <p class="page-label">Vista de equipo</p>
-        <h1 class="page-title">Calendario</h1>
+        <p class="page-label" id="calendarViewLabel">Planificacion</p>
+        <h1 class="page-title" id="calendarTitle">Calendario</h1>
+        <p class="page-subtitle" id="calendarSubtitle">Consulta tus dias solicitados y las ausencias del equipo durante el mes.</p>
       </div>
       <div class="month-nav">
         <button id="prev-btn" class="nav-btn" aria-label="Mes anterior">
@@ -124,11 +124,11 @@
       <aside class="right-panel">
         <div class="team-card">
           <div class="team-header">
-            <span class="team-title">Equipo fuera hoy</span>
+            <span class="team-title" id="teamPanelTitle">Ausencias del mes</span>
             <span class="team-badge" id="teamBadge">0</span>
           </div>
           <div class="team-list" id="teamList">
-            <p style="font-size:12.5px; color: var(--text-sub);">Nadie está fuera hoy.</p>
+            <p style="font-size:12.5px; color: var(--text-sub);">No hay ausencias registradas este mes.</p>
           </div>
           <a href="/src/pages/equipo/equipo.html" class="invite-btn" style="display:block; text-align:center; text-decoration:none; line-height:1;">Ver equipo completo</a>
         </div>

@@ -6,17 +6,16 @@
   <title>VacationFlow - Equipo</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="equipo.css">
-  <script src="/auth-guard.js" data-required-role="admin"></script>
+  <script src="/auth-guard.js" data-required-role="any"></script>
 </head>
 <body>
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-icon">🌿</div>
+      <div class="logo-icon"><img src="/public/assets/logoVF.png" alt="VacationFlow logo"></div>
       <div class="logo-text">
         VacationFlow
-        <span>The Digital Sanctuary</span>
       </div>
     </div>
     <nav class="sidebar-nav">
@@ -68,7 +67,7 @@
     <header class="page-header">
       <div>
         <h1 class="page-title">Equipo</h1>
-        <p class="page-sub">Consulta el directorio del equipo y accede al detalle de cada empleado</p>
+        <p class="page-sub" id="teamPageSubtitle">Consulta el directorio completo del equipo.</p>
       </div>
       <a href="/src/pages/solicitud/solicitar.html" class="btn-submit">＋ Nueva Solicitud</a>
     </header>
@@ -141,9 +140,9 @@
         </div>
 
         <div class="banner-card">
-          <p class="banner-title">Un equipo descansado es un equipo productivo.</p>
-          <p class="banner-sub">Accede a las solicitudes pendientes desde el panel de gestión.</p>
-          <a href="/src/pages/jefe/solicitud/solicitudes_jefe.html" class="banner-cta">REVISAR AHORA →</a>
+          <p class="banner-title" id="teamBannerTitle">Un equipo descansado es un equipo productivo.</p>
+          <p class="banner-sub" id="teamBannerSub">Accede a las solicitudes pendientes desde el panel de gestión.</p>
+          <a href="/src/pages/jefe/solicitud/solicitudes_jefe.html" class="banner-cta" id="teamBannerCta">REVISAR AHORA →</a>
         </div>
       </div>
     </div>

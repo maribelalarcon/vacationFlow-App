@@ -34,6 +34,14 @@ body {
     padding-top: 30px;
 }
 
+.logo-imagen-login {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto 10px;
+}
+
 .icono-paraguas {
     background-color: #e8f7f5;
     width: 50px;
