@@ -131,6 +131,8 @@ async function cargarUsuarios() {
       nombre:       `${u.nombre} ${u.apellidos || ''}`.trim(),
       departamento: u.rol || 'Empleado',
       email:        u.email,
+      avatar_url:   u.avatar_url || '',
+      avatar:       u.avatar || '',
       desde:        '—',
       hasta:        '—',
       estado:       'Sin solicitudes'
@@ -196,11 +198,12 @@ function crearFila(u) {
   tr.style.cursor = puedeVerDetalle ? 'pointer' : 'default';
   tr.title = puedeVerDetalle ? `Ver perfil de ${u.nombre}` : `${u.nombre}`;
   const inicial = u.nombre.charAt(0).toUpperCase();
+  const avatarUrl = resolverAvatarUsuario(u);
 
   tr.innerHTML = `
     <td>
       <div class="employee-cell">
-        <div class="employee-avatar">${inicial}</div>
+        <div class="employee-avatar">${avatarUrl ? `<img src="${avatarUrl}" alt="${u.nombre}">` : inicial}</div>
         <div>
           <span class="employee-name">${u.nombre}</span>
           <div style="font-size:11px;color:var(--text-sub);">${u.email}</div>
@@ -220,7 +223,29 @@ function crearFila(u) {
     });
   }
 
+  const avatarImg = tr.querySelector('.employee-avatar img');
+  if (avatarImg) {
+    avatarImg.addEventListener('error', () => {
+      avatarImg.remove();
+      tr.querySelector('.employee-avatar').textContent = inicial;
+    }, { once: true });
+  }
+
   return tr;
+}
+
+function resolverAvatarUsuario(user) {
+  return user?.avatar_url || obtenerAvatarGuardado(user) || user?.avatar || '';
+}
+
+function obtenerAvatarGuardado(user) {
+  const clave = getAvatarStorageKey(user);
+  return localStorage.getItem(clave) || '';
+}
+
+function getAvatarStorageKey(user) {
+  const identificador = user?.id || user?.email || 'anon';
+  return `vacationflow_avatar_${identificador}`;
 }
 
 // ═══════════════════════════════════════════════════════

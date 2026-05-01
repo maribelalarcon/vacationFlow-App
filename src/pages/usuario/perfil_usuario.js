@@ -10,8 +10,6 @@
 // ═══════════════════════════════════════════════════════
 
 const API_URL = localStorage.getItem('vacationflow_api_url') || 'https://vacationflow-api-production.up.railway.app';
-const DEFAULT_AVATAR_URL = 'https://i.imgur.com/8Km9tLL.png';
-
 const token = sessionStorage.getItem('token') || localStorage.getItem('token');
 
 if (!token) {
@@ -76,7 +74,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const avatarEl = document.getElementById('userAvatar');
   sincronizarVistaPerfil(usuario, avatarEl);
   avatarEl.addEventListener('error', () => {
-    avatarEl.src = DEFAULT_AVATAR_URL;
+    updateAvatarState(avatarEl, '');
   });
 
   configurarCambioAvatar(usuario, avatarEl);
@@ -308,6 +306,7 @@ function configurarFormularioPerfil(usuario, avatarEl) {
 
 function sincronizarVistaPerfil(usuario, avatarEl) {
   const nombreCompleto = getNombreCompleto(usuario);
+  const avatarUrl = usuario.avatar_url || obtenerAvatarGuardado(usuario) || '';
 
   document.getElementById('userName').textContent = nombreCompleto;
   document.getElementById('userRole').textContent = usuario.rol || 'Empleado';
@@ -315,7 +314,7 @@ function sincronizarVistaPerfil(usuario, avatarEl) {
   document.title = `VacationFlow - ${nombreCompleto}`;
 
   avatarEl.alt = nombreCompleto;
-  avatarEl.src = usuario.avatar_url || obtenerAvatarGuardado(usuario) || DEFAULT_AVATAR_URL;
+  updateAvatarState(avatarEl, avatarUrl);
 }
 
 function getNombreCompleto(usuario) {
@@ -387,7 +386,7 @@ function configurarCambioAvatar(usuario, avatarEl) {
       const avatarPersistido = await persistirAvatar(usuario, dataUrl);
       guardarAvatar(usuario, avatarPersistido);
       usuario.avatar_url = avatarPersistido;
-      avatarEl.src = avatarPersistido;
+      updateAvatarState(avatarEl, avatarPersistido);
     } catch (error) {
       console.error('Error al cargar avatar:', error);
       alert('No se pudo actualizar la foto de perfil.');
@@ -395,6 +394,22 @@ function configurarCambioAvatar(usuario, avatarEl) {
       avatarInput.value = '';
     }
   });
+}
+
+function updateAvatarState(avatarEl, avatarUrl) {
+  const hasAvatar = Boolean(avatarUrl);
+  const avatarCheck = document.querySelector('.avatar-check');
+
+  avatarEl.classList.toggle('is-empty', !hasAvatar);
+  if (avatarCheck) {
+    avatarCheck.classList.toggle('is-hidden', !hasAvatar);
+  }
+
+  if (hasAvatar) {
+    avatarEl.src = avatarUrl;
+  } else {
+    avatarEl.removeAttribute('src');
+  }
 }
 
 function leerArchivoComoDataUrl(file) {

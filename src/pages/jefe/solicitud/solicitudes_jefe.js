@@ -4,6 +4,7 @@
 
 const BASE = localStorage.getItem('vacationflow_api_url') || 'https://vacationflow-api-production.up.railway.app';
 const DEFAULT_AVATAR_URL = 'https://i.imgur.com/8Km9tLL.png';
+let directorioUsuarios = new Map();
 
 function getToken() {
   return sessionStorage.getItem('token') || localStorage.getItem('token');
@@ -31,6 +32,7 @@ const COLORES = ['av1','av2','av3','av4','av5'];
 // ─── CARGAR SOLICITUDES PENDIENTES ───────────────────────
 async function cargarPendientes() {
   try {
+    await cargarDirectorioUsuarios();
     const res = await fetch(`${BASE}/api/admin/vacations/pending`, {
       headers: { 'Authorization': `Bearer ${getToken()}` }
     });
@@ -45,6 +47,25 @@ async function cargarPendientes() {
     renderSolicitudes([]);
     actualizarBadge(0);
     actualizarHistorico(0);
+  }
+}
+
+async function cargarDirectorioUsuarios() {
+  if (directorioUsuarios.size) return;
+
+  try {
+    const res = await fetch(`${BASE}/api/users`, {
+      headers: { 'Authorization': `Bearer ${getToken()}` }
+    });
+
+    if (!res.ok) return;
+
+    const users = await res.json();
+    directorioUsuarios = new Map(
+      users.map((user) => [String(user.id), user])
+    );
+  } catch (error) {
+    console.warn('No se pudo cargar el directorio de usuarios para avatares:', error);
   }
 }
 
@@ -185,6 +206,11 @@ function resolverAvatarUsuario(user) {
   return user.avatar_url || obtenerAvatarGuardado(user) || user.avatar || DEFAULT_AVATAR_URL;
 }
 
+function completarUsuario(user) {
+  if (!user) return {};
+  return { ...(directorioUsuarios.get(String(user.id)) || {}), ...user };
+}
+
 function obtenerAvatarGuardado(user) {
   const clave = getAvatarStorageKey(user);
   return localStorage.getItem(clave) || '';
@@ -215,9 +241,11 @@ function renderSolicitudes(solicitudes) {
   }
 
   solicitudes.forEach((s, i) => {
-    const nombre = s.empleado?.nombre || 'Empleado';
-    const apellidos = s.empleado?.apellidos || '';
+    const empleado = completarUsuario(s.empleado);
+    const nombre = empleado?.nombre || 'Empleado';
+    const apellidos = empleado?.apellidos || '';
     const iniciales = `${nombre[0] || 'E'}${apellidos[0] || ''}`;
+    const avatarUrl = resolverAvatarUsuario(empleado);
     const tipoClass = s.tipo === 'vacaciones' ? 'vacaciones' : s.tipo === 'baja_medica' ? 'baja' : 'asuntos';
     const tipoLabel = s.tipo === 'vacaciones' ? 'VACACIONES' : s.tipo === 'baja_medica' ? 'BAJA MÉDICA' : 'ASUNTOS PROPIOS';
     const fechaI = formatFecha(s.fecha_inicio);
@@ -229,7 +257,7 @@ function renderSolicitudes(solicitudes) {
     card.tabIndex = 0;
     card.innerHTML = `
       <div class="sol-top">
-        <div class="sol-avatar ${COLORES[i % COLORES.length]}">${iniciales}</div>
+        <div class="sol-avatar ${COLORES[i % COLORES.length]}">${avatarUrl ? `<img src="${avatarUrl}" alt="${nombre} ${apellidos}">` : iniciales}</div>
         <div>
           <div class="sol-nombre">${nombre} ${apellidos}</div>
           <span class="sol-tag ${tipoClass}">${tipoLabel}</span>
@@ -255,6 +283,13 @@ function renderSolicitudes(solicitudes) {
         openDetalle(s.id);
       }
     });
+    const avatarImg = card.querySelector('.sol-avatar img');
+    if (avatarImg) {
+      avatarImg.addEventListener('error', () => {
+        avatarImg.remove();
+        card.querySelector('.sol-avatar').textContent = iniciales;
+      }, { once: true });
+    }
     grid.appendChild(card);
   });
 }

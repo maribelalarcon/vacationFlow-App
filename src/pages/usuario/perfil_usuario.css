@@ -170,12 +170,29 @@ body {
   flex-shrink: 0;
 }
 
+.avatar-placeholder {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #eef6f4, #d7ebe5);
+  color: #6d8d86;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .profile-avatar {
+  position: relative;
   width: 100%;
   height: 100%;
   border-radius: 20px;
   object-fit: cover;
   background: linear-gradient(135deg, #d7ebe5, #b9d9d0);
+  display: block;
+}
+
+.profile-avatar.is-empty {
+  opacity: 0;
 }
 
 .avatar-input {
@@ -220,6 +237,10 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 10px;
+}
+
+.avatar-check.is-hidden {
+  display: none;
 }
 
 .user-meta-tags {

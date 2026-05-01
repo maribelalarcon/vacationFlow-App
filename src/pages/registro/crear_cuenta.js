@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const apellido  = document.getElementById('apellido').value.trim();
         const email     = document.getElementById('email').value.trim();
         const password  = document.getElementById('password').value;
+        const rolSeleccionado = document.querySelector('input[name="rol"]:checked')?.value || 'empleado';
 
         // 2) Validaciones en el front antes de enviar
         if (!nombre || !apellido || !email || !password) {
@@ -44,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`${API_URL}/api/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nombre, apellido, email, password, rol: 'empleado' })
+                body: JSON.stringify({ nombre, apellido, email, password, rol: rolSeleccionado })
             });
 
             const data = await response.json();

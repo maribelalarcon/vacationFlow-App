@@ -92,6 +92,28 @@ async function cargarDetalle() {
     solicitudActual.userId   = solicitudActual.usuario_id || solicitudActual.user_id || empleado.id;
     solicitudActual.email    = empleado.email || solicitudActual.email;
     solicitudActual.rol      = empleado.rol || solicitudActual.rol;
+    solicitudActual.avatar_url = empleado.avatar_url || solicitudActual.avatar_url || '';
+
+    if (solicitudActual.userId) {
+      try {
+        const resEmp = await fetch(`${API_URL}/api/users/${solicitudActual.userId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (resEmp.ok) {
+          const empleadoCompleto = await resEmp.json();
+          solicitudActual = {
+            ...empleadoCompleto,
+            ...solicitudActual,
+            nombre: `${empleadoCompleto.nombre || empleado.nombre || ''} ${empleadoCompleto.apellidos || empleado.apellidos || ''}`.trim(),
+            email: empleadoCompleto.email || solicitudActual.email,
+            rol: empleadoCompleto.rol || solicitudActual.rol,
+            avatar_url: empleadoCompleto.avatar_url || solicitudActual.avatar_url || ''
+          };
+        }
+      } catch (e) {
+        console.warn('No se pudo completar el perfil del empleado para el avatar.');
+      }
+    }
 
     // Cargar disponibilidad del empleado
     let disp = null;
@@ -116,9 +138,10 @@ async function cargarDetalle() {
 // ═══════════════════════════════════════════════════════
 function renderDetalle(s, disp) {
   const inicial = s.nombre.charAt(0).toUpperCase();
+  const avatarUrl = resolverAvatarUsuario(s);
 
   // Panel empleado
-  document.getElementById('empAvatar').textContent  = inicial;
+  updateAvatarEmpleado(avatarUrl, inicial, s.nombre);
   document.getElementById('empNombre').textContent  = s.nombre;
   document.getElementById('empRol').textContent     = s.rol || s.email || 'Empleado';
   document.getElementById('empEmail').textContent   = s.email || '—';
@@ -251,6 +274,43 @@ function formatearFecha(iso) {
   const [, mes, dia] = String(iso).split('T')[0].split('-');
   const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   return `${parseInt(dia)} ${meses[parseInt(mes) - 1]}`;
+}
+
+function resolverAvatarUsuario(user) {
+  return user?.avatar_url || obtenerAvatarGuardado(user) || user?.avatar || '';
+}
+
+function obtenerAvatarGuardado(user) {
+  const clave = getAvatarStorageKey(user);
+  return localStorage.getItem(clave) || '';
+}
+
+function getAvatarStorageKey(user) {
+  const identificador = user?.id || user?.userId || user?.email || 'anon';
+  return `vacationflow_avatar_${identificador}`;
+}
+
+function updateAvatarEmpleado(avatarUrl, inicial, nombreCompleto) {
+  const avatarEl = document.getElementById('empAvatar');
+  if (!avatarEl) return;
+
+  if (!avatarUrl) {
+    avatarEl.innerHTML = '';
+    avatarEl.textContent = inicial;
+    avatarEl.classList.remove('has-image');
+    return;
+  }
+
+  avatarEl.classList.add('has-image');
+  avatarEl.innerHTML = `<img src="${avatarUrl}" alt="${nombreCompleto}">`;
+  const img = avatarEl.querySelector('img');
+  if (img) {
+    img.addEventListener('error', () => {
+      avatarEl.innerHTML = '';
+      avatarEl.textContent = inicial;
+      avatarEl.classList.remove('has-image');
+    }, { once: true });
+  }
 }
 
 function formatearTipo(tipo) {

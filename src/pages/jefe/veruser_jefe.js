@@ -116,12 +116,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 function renderPerfil(emp, disp, solicitudes) {
   const nombreCompleto = `${emp.nombre} ${emp.apellidos || ''}`.trim();
   const inicial        = nombreCompleto.charAt(0).toUpperCase();
+  const avatarUrl      = resolverAvatarUsuario(emp);
 
   // Cabecera
   document.getElementById('empNombre').textContent    = nombreCompleto;
   document.getElementById('empRol').textContent       = emp.rol || 'Empleado';
   document.getElementById('empEmail').textContent     = emp.email || '';
   document.getElementById('avatarInitials').textContent = inicial;
+  updateAvatarState(avatarUrl, nombreCompleto);
   document.title = `VacationFlow - ${nombreCompleto}`;
 
   // Stats de disponibilidad
@@ -278,6 +280,47 @@ function formatearTipo(tipo) {
     asuntos_propios: 'Asuntos propios'
   };
   return tipos[tipo] || tipo || '—';
+}
+
+function resolverAvatarUsuario(user) {
+  return user.avatar_url || obtenerAvatarGuardado(user) || user.avatar || '';
+}
+
+function obtenerAvatarGuardado(user) {
+  const clave = getAvatarStorageKey(user);
+  return localStorage.getItem(clave) || '';
+}
+
+function getAvatarStorageKey(user) {
+  const identificador = user?.id || user?.email || 'anon';
+  return `vacationflow_avatar_${identificador}`;
+}
+
+function updateAvatarState(avatarUrl, nombreCompleto) {
+  const imageEl = document.getElementById('avatarImage');
+  const initialsEl = document.getElementById('avatarInitials');
+  const checkEl = document.querySelector('.avatar-check');
+  const hasAvatar = Boolean(avatarUrl);
+
+  if (!imageEl || !initialsEl) return;
+
+  imageEl.classList.toggle('is-hidden', !hasAvatar);
+  initialsEl.classList.toggle('is-hidden', hasAvatar);
+  if (checkEl) {
+    checkEl.classList.toggle('is-hidden', !hasAvatar);
+  }
+
+  if (hasAvatar) {
+    imageEl.alt = `Foto de ${nombreCompleto}`;
+    imageEl.src = avatarUrl;
+    imageEl.onerror = () => {
+      imageEl.classList.add('is-hidden');
+      initialsEl.classList.remove('is-hidden');
+      if (checkEl) checkEl.classList.add('is-hidden');
+    };
+  } else {
+    imageEl.removeAttribute('src');
+  }
 }
 
 function setupMobileMenu() {

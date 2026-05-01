@@ -184,6 +184,14 @@ body {
   width: 44px; height: 44px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sol-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .av1 { background: linear-gradient(135deg, #e07b6b, #c0392b); }
 .av2 { background: linear-gradient(135deg, #6b8ee0, #2c3e8c); }

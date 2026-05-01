@@ -20,10 +20,12 @@ let currentMonth = hoy.getMonth();
 let eventos = [];
 let resumen = { ausencias_en_mes: 0, dias_propios_en_mes: 0 };
 let ausenciasMes = [];
+let directorioUsuarios = new Map();
 
 document.addEventListener('DOMContentLoaded', async () => {
   setupMobileMenu();
   configurarVistaSegunRol();
+  await cargarDirectorioUsuarios();
   await cargarCalendario();
   renderCalendar();
   renderPanelDerecho();
@@ -66,6 +68,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 });
+
+async function cargarDirectorioUsuarios() {
+  if (directorioUsuarios.size) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/users`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) return;
+
+    const users = await res.json();
+    directorioUsuarios = new Map(users.map((user) => [String(user.id), user]));
+  } catch (error) {
+    console.warn('No se pudo cargar el directorio de usuarios para avatares del calendario:', error);
+  }
+}
 
 function configurarVistaSegunRol() {
   const viewLabel = document.getElementById('calendarViewLabel');
@@ -259,12 +277,26 @@ function renderPanelDerecho() {
   }
 
   items.forEach((item, index) => {
+    const usuarioCompleto = completarUsuario(item);
     const row = document.createElement('div');
     row.className = 'team-member';
 
     const avatar = document.createElement('div');
     avatar.className = `avatar av${(index % 5) + 1}`;
-    avatar.textContent = getInitials(item.nombre, item.apellidos);
+    const avatarUrl = resolverAvatarUsuario(usuarioCompleto);
+    const iniciales = getInitials(usuarioCompleto.nombre, usuarioCompleto.apellidos);
+    if (avatarUrl) {
+      avatar.innerHTML = `<img src="${avatarUrl}" alt="${`${usuarioCompleto.nombre || ''} ${usuarioCompleto.apellidos || ''}`.trim()}">`;
+      const img = avatar.querySelector('img');
+      if (img) {
+        img.addEventListener('error', () => {
+          avatar.innerHTML = '';
+          avatar.textContent = iniciales;
+        }, { once: true });
+      }
+    } else {
+      avatar.textContent = iniciales;
+    }
 
     const info = document.createElement('div');
     info.className = 'member-info';
@@ -288,6 +320,25 @@ function renderPanelDerecho() {
     row.appendChild(dot);
     list.appendChild(row);
   });
+}
+
+function completarUsuario(user) {
+  if (!user) return {};
+  return { ...(directorioUsuarios.get(String(user.usuario_id || user.id)) || {}), ...user };
+}
+
+function resolverAvatarUsuario(user) {
+  return user?.avatar_url || obtenerAvatarGuardado(user) || user?.avatar || '';
+}
+
+function obtenerAvatarGuardado(user) {
+  const clave = getAvatarStorageKey(user);
+  return localStorage.getItem(clave) || '';
+}
+
+function getAvatarStorageKey(user) {
+  const identificador = user?.usuario_id || user?.id || user?.email || 'anon';
+  return `vacationflow_avatar_${identificador}`;
 }
 
 function dedupeAusenciasMes(items) {

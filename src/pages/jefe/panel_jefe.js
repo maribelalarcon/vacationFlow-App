@@ -3,6 +3,8 @@
 // ═══════════════════════════════════════════════════════
 
 const BASE = localStorage.getItem('vacationflow_api_url') || 'https://vacationflow-api-production.up.railway.app';
+const DEFAULT_AVATAR_URL = 'https://i.imgur.com/8Km9tLL.png';
+let directorioUsuarios = new Map();
 
 function getToken() {
   return sessionStorage.getItem('token') || localStorage.getItem('token');
@@ -27,6 +29,7 @@ if (!_token) {
 // ─── CARGAR SOLICITUDES PENDIENTES ───────────────────────────
 async function cargarPendientes() {
   try {
+    await cargarDirectorioUsuarios();
     const res = await fetch(`${BASE}/api/admin/vacations/pending`, {
       headers: { 'Authorization': `Bearer ${getToken()}` }
     });
@@ -38,6 +41,24 @@ async function cargarPendientes() {
   } catch (err) {
     console.error('Error cargando pendientes:', err);
     renderPendientes([]);
+  }
+}
+
+async function cargarDirectorioUsuarios() {
+  if (directorioUsuarios.size) return;
+
+  try {
+    const res = await fetch(`${BASE}/api/users`, {
+      headers: { 'Authorization': `Bearer ${getToken()}` }
+    });
+    if (!res.ok) return;
+
+    const usuarios = await res.json();
+    directorioUsuarios = new Map(
+      usuarios.map((user) => [String(user.id), user])
+    );
+  } catch (err) {
+    console.warn('No se pudo cargar el directorio de usuarios para avatares:', err);
   }
 }
 
@@ -76,9 +97,11 @@ function renderPendientes(solicitudes) {
 
   const colores = ['av1','av2','av3','av4','av5'];
   solicitudes.forEach((s, i) => {
-    const nombre = s.empleado?.nombre || 'Empleado';
-    const apellidos = s.empleado?.apellidos || '';
+    const empleado = completarUsuario(s.empleado);
+    const nombre = empleado?.nombre || 'Empleado';
+    const apellidos = empleado?.apellidos || '';
     const iniciales = `${nombre[0] || 'E'}${apellidos[0] || ''}`;
+    const avatarUrl = resolverAvatarUsuario(empleado);
     const tipo = s.tipo === 'vacaciones' ? 'vacation' : 'medical';
     const tipoLabel = s.tipo === 'vacaciones' ? 'VACACIONES' : s.tipo === 'baja_medica' ? 'BAJA MÉDICA' : 'ASUNTOS PROPIOS';
     const fechaI = s.fecha_inicio?.slice(0,10) || '';
@@ -89,7 +112,7 @@ function renderPendientes(solicitudes) {
     item.dataset.id = s.id;
     item.tabIndex = 0;
     item.innerHTML = `
-      <div class="req-avatar ${colores[i % colores.length]}">${iniciales}</div>
+      <div class="req-avatar ${colores[i % colores.length]}">${avatarUrl ? `<img src="${avatarUrl}" alt="${nombre} ${apellidos}">` : iniciales}</div>
       <div class="req-info">
         <div class="req-name">${nombre} ${apellidos}</div>
         <div class="req-meta">
@@ -115,8 +138,20 @@ function renderPendientes(solicitudes) {
         window.location.href = `/src/pages/solicitud/detalle_solicitud.html#id=${s.id}`;
       }
     });
+    const avatarImg = item.querySelector('.req-avatar img');
+    if (avatarImg) {
+      avatarImg.addEventListener('error', () => {
+        avatarImg.remove();
+        item.querySelector('.req-avatar').textContent = iniciales;
+      }, { once: true });
+    }
     list.appendChild(item);
   });
+}
+
+function completarUsuario(user) {
+  if (!user) return null;
+  return { ...(directorioUsuarios.get(String(user.id)) || {}), ...user };
 }
 
 // ─── APROBAR ─────────────────────────────────────────────
@@ -128,9 +163,7 @@ async function aprobar(btn, id) {
     });
     const data = await res.json();
     if (res.ok) {
-      btn.closest('.request-item').classList.add('approved');
-      btn.disabled = true;
-      btn.closest('.request-item').querySelector('.btn-reject').disabled = true;
+      removePendingItem(btn.closest('.request-item'));
       showToast('✅ Solicitud aprobada correctamente.');
     } else {
       showToast('⚠️ ' + data.message);
@@ -149,15 +182,31 @@ async function rechazar(btn, id) {
     });
     const data = await res.json();
     if (res.ok) {
-      btn.closest('.request-item').classList.add('rejected');
-      btn.disabled = true;
-      btn.closest('.request-item').querySelector('.btn-approve').disabled = true;
+      removePendingItem(btn.closest('.request-item'));
       showToast('❌ Solicitud rechazada.');
     } else {
       showToast('⚠️ ' + data.message);
     }
   } catch (err) {
     showToast('❌ No se pudo conectar con el servidor.');
+  }
+}
+
+function removePendingItem(item) {
+  if (!item) return;
+
+  item.remove();
+
+  const list = document.getElementById('requests-list');
+  const badge = document.getElementById('badge-pendientes');
+  const restantes = list ? list.querySelectorAll('.request-item').length : 0;
+
+  if (badge) {
+    badge.textContent = `${restantes} NUEVAS`;
+  }
+
+  if (list && restantes === 0) {
+    list.innerHTML = '<p style="color:var(--text-sub);font-size:13px">No hay solicitudes pendientes.</p>';
   }
 }
 
@@ -320,6 +369,20 @@ function showToast(msg) {
   document.getElementById('toast-msg').textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function resolverAvatarUsuario(user) {
+  return user?.avatar_url || obtenerAvatarGuardado(user) || user?.avatar || DEFAULT_AVATAR_URL;
+}
+
+function obtenerAvatarGuardado(user) {
+  const clave = getAvatarStorageKey(user);
+  return localStorage.getItem(clave) || '';
+}
+
+function getAvatarStorageKey(user) {
+  const identificador = user?.id || user?.email || 'anon';
+  return `vacationflow_avatar_${identificador}`;
 }
 
 
