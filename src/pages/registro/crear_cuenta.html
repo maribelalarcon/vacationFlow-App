@@ -22,26 +22,26 @@
                 <h1>Crear Cuenta</h1>
                 <p class="texto-gris">Comienza tu viaje hacia un entorno de trabajo equilibrado.</p>
 
-                <form id="registroForm">
+                <form id="registroForm" autocomplete="off">
                     <div class="fila-doble">
                         <div class="campo">
                             <label for="nombre">NOMBRE</label>
-                            <input type="text" id="nombre" placeholder="Juan" required>
+                            <input type="text" id="nombre" name="nombre" placeholder="Juan" autocomplete="given-name" required>
                         </div>
                         <div class="campo">
                             <label for="apellido">APELLIDOS</label>
-                            <input type="text" id="apellido" placeholder="Pérez García" required>
+                            <input type="text" id="apellido" name="apellido" placeholder="Pérez García" autocomplete="family-name" required>
                         </div>
                     </div>
 
                     <div class="campo">
                         <label for="email">CORREO CORPORATIVO</label>
-                        <input type="email" id="email" placeholder="j.perez@empresa.com" required>
+                        <input type="email" id="email" name="email_registro" placeholder="j.perez@empresa.com" autocomplete="off" autocapitalize="none" spellcheck="false" required>
                     </div>
 
                     <div class="campo">
                         <label for="password">CONTRASEÑA</label>
-                        <input type="password" id="password" placeholder="Mínimo 6 caracteres" minlength="6" required>
+                        <input type="password" id="password" name="password_registro" placeholder="Mínimo 6 caracteres" minlength="6" autocomplete="new-password" required>
                     </div>
 
                     <div class="campo">

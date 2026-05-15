@@ -10,6 +10,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const form       = document.getElementById('registroForm');
     const submitBtn  = document.getElementById('submitBtn');
     const messageEl  = document.getElementById('registroMessage');
+    const nombreInput = document.getElementById('nombre');
+    const apellidoInput = document.getElementById('apellido');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const rolEmpleadoInput = document.querySelector('input[name="rol"][value="empleado"]');
+
+    const resetRegistroForm = () => {
+        form.reset();
+
+        if (nombreInput) nombreInput.value = '';
+        if (apellidoInput) apellidoInput.value = '';
+        if (emailInput) emailInput.value = '';
+        if (passwordInput) passwordInput.value = '';
+        if (rolEmpleadoInput) rolEmpleadoInput.checked = true;
+        showMessage('', '');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Registrarse';
+    };
+
+    resetRegistroForm();
+
+    window.addEventListener('pageshow', () => {
+        resetRegistroForm();
+    });
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -53,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 // ✅ Registro correcto
                 showMessage('✅ ¡Cuenta creada! Redirigiendo al login...', 'success');
+                resetRegistroForm();
                 setTimeout(() => {
                     window.location.href = '/index.html';
                 }, 1500);
